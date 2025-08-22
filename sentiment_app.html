@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tweetverse Sentiment Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PapaParse for CSV -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-6xl mx-auto p-6">
+    <h1 class="text-3xl font-bold text-center mb-8 text-blue-600">
+      🌍 Unveiling the Tweetverse: Sentiment Dashboard
+    </h1>
+
+    <!-- Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- Single Text Analyzer -->
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Analyze Single Text</h2>
+        <textarea id="inputText" placeholder="Type your tweet here..."
+          class="w-full p-3 border rounded-md mb-4"></textarea>
+        <button onclick="analyzeText()" 
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          Analyze
+        </button>
+        <p class="mt-3 text-lg">Result: 
+          <span id="singleResult" class="font-bold text-blue-600">-</span>
+        </p>
+      </div>
+
+      <!-- CSV Analyzer -->
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Analyze CSV of Tweets</h2>
+        <input type="file" id="csvFile" accept=".csv"
+          class="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
+                 file:rounded-full file:border-0 file:text-sm file:font-semibold
+                 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+        <button onclick="analyzeCSV()" 
+          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+          Upload & Analyze
+        </button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white mt-8 p-6 rounded-2xl shadow">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Results Table</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full border border-gray-200 text-sm">
+          <thead class="bg-blue-600 text-white">
+            <tr>
+              <th class="px-4 py-2 border">ID</th>
+              <th class="px-4 py-2 border">Tweet</th>
+              <th class="px-4 py-2 border">Sentiment</th>
+            </tr>
+          </thead>
+          <tbody id="resultsTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="bg-white mt-8 p-6 rounded-2xl shadow">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Sentiment Distribution</h2>
+      <canvas id="sentimentChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // Simple sentiment lexicon
+    const lexicon = {
+      "love": 2, "happy": 2, "excellent": 3, "amazing": 3,
+      "good": 1, "like": 1, "great": 2, "best": 3,
+      "bad": -2, "sad": -2, "angry": -3, "terrible": -3,
+      "worst": -3, "awful": -3, "hate": -3, "disappointed": -2,
+      "okay": 0, "fine": 0
+    };
+
+    function getSentiment(text) {
+      let score = 0;
+      const words = (text || "").toLowerCase().split(/\\s+/);
+      words.forEach(word => {
+        if (lexicon[word] !== undefined) score += lexicon[word];
+      });
+      if (score > 1) return "Positive";
+      if (score < -1) return "Negative";
+      return "Neutral";
+    }
+
+    function analyzeText() {
+      const text = document.getElementById("inputText").value;
+      const result = getSentiment(text);
+      document.getElementById("singleResult").innerText = result;
+      document.getElementById("singleResult").className =
+        result === "Positive" ? "font-bold text-green-600" :
+        result === "Negative" ? "font-bold text-red-600" :
+        "font-bold text-gray-600";
+    }
+
+    function analyzeCSV() {
+      const file = document.getElementById("csvFile").files[0];
+      if (!file) return alert("Please upload a CSV file!");
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          const rows = results.data;
+          const tableBody = document.getElementById("resultsTable");
+          tableBody.innerHTML = "";
+          let counts = {Positive:0, Negative:0, Neutral:0};
+
+          rows.forEach(row => {
+            const sentiment = getSentiment(row.text || "");
+            counts[sentiment]++;
+            const tr = `<tr>
+                          <td class="border px-4 py-2">${row.id || ""}</td>
+                          <td class="border px-4 py-2">${row.text || ""}</td>
+                          <td class="border px-4 py-2 font-bold ${
+                              sentiment === "Positive" ? "text-green-600" :
+                              sentiment === "Negative" ? "text-red-600" : "text-gray-600"
+                            }">${sentiment}</td>
+                        </tr>`;
+            tableBody.innerHTML += tr;
+          });
+
+          // Chart.js
+          const ctx = document.getElementById("sentimentChart").getContext("2d");
+          if (window.sentimentChart) window.sentimentChart.destroy();
+          window.sentimentChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: ["Positive", "Negative", "Neutral"],
+              datasets: [{
+                label: "Sentiment Count",
+                data: [counts.Positive, counts.Negative, counts.Neutral],
+                backgroundColor: ["#28a745", "#dc3545", "#6c757d"]
+              }]
+            },
+            options: { responsive: true, plugins: { legend: { position: "bottom" } } }
+          });
+        }
+      });
+    }
+  </script>
+</body>
+</html>
