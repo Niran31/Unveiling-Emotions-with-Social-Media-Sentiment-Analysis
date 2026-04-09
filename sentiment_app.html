@@ -3,149 +3,370 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tweetverse Sentiment Dashboard</title>
-  <!-- Tailwind CSS -->
+  <title>Tweetverse Deep NLP Dashboard</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- PapaParse for CSV -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  <!-- Chart.js -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Outfit', 'sans-serif'] },
+          animation: { blob: "blob 7s infinite" },
+          keyframes: {
+            blob: {
+              "0%": { transform: "translate(0px, 0px) scale(1)" },
+              "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+              "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+              "100%": { transform: "translate(0px, 0px) scale(1)" }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- PDF Export Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <style>
+    body {
+      background-color: #050b14;
+      background-image: 
+        radial-gradient(at 10% 10%, rgba(30, 20, 60, 1) 0, transparent 40%),
+        radial-gradient(at 90% 10%, rgba(10, 40, 70, 1) 0, transparent 40%),
+        radial-gradient(at 50% 90%, rgba(50, 10, 40, 1) 0, transparent 40%);
+      background-attachment: fixed;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    .glass-card:hover { border-color: rgba(99, 102, 241, 0.3); }
+    
+    .glass-input {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    .glass-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 10px rgba(99, 102, 241, 0.2); }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5 0%, #d946ef 100%);
+      transition: opacity 0.3s, transform 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
+    
+    .status-positive { color: #4ade80; }
+    .status-negative { color: #f87171; }
+    .status-neutral { color: #94a3b8; }
+    .status-joy { color: #facc15; }
+    .status-anger { color: #ef4444; }
+    .status-sadness { color: #60a5fa; }
+    .status-fear { color: #a78bfa; }
+    .status-surprise { color: #fb923c; }
+    .status-love { color: #f472b6; }
+    
+    .rule-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+    }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
-  <div class="max-w-6xl mx-auto p-6">
-    <h1 class="text-3xl font-bold text-center mb-8 text-blue-600">
-      🌍 Unveiling the Tweetverse: Sentiment Dashboard
-    </h1>
+<body class="relative overflow-x-hidden" id="reportArea">
 
-    <!-- Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      
-      <!-- Single Text Analyzer -->
-      <div class="bg-white p-6 rounded-2xl shadow">
-        <h2 class="text-xl font-semibold mb-4 text-gray-700">Analyze Single Text</h2>
-        <textarea id="inputText" placeholder="Type your tweet here..."
-          class="w-full p-3 border rounded-md mb-4"></textarea>
-        <button onclick="analyzeText()" 
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          Analyze
+  <!-- Background decorative blobs (hidden when printing) -->
+  <div class="absolute top-0 -left-4 w-72 h-72 bg-purple-600 rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-blob data-no-print"></div>
+  <div class="absolute top-0 -right-4 w-72 h-72 bg-blue-600 rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-blob animation-delay-2000 data-no-print"></div>
+
+  <div class="max-w-7xl mx-auto relative z-10 p-4 md:p-8">
+    <header class="flex flex-col md:flex-row justify-between items-center mb-12 mt-2">
+      <div class="flex-1"></div>
+      <div class="flex-1 text-center">
+        <h1 class="text-4xl md:text-6xl font-display font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 mb-2 tracking-tight">
+          Tweetverse AI Engine
+        </h1>
+        <p class="text-slate-400 text-sm md:text-lg font-light tracking-wide">Transformers Deep Learning & Data Mining</p>
+      </div>
+      <div class="flex-1 flex justify-end mt-4 md:mt-0">
+        <button onclick="exportPDF()" class="bg-white/5 hover:bg-white/10 text-white px-5 py-2 rounded-xl backdrop-blur-md border border-white/10 transition-all font-semibold shadow-lg data-no-print flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          Export Report
         </button>
-        <p class="mt-3 text-lg">Result: 
-          <span id="singleResult" class="font-bold text-blue-600">-</span>
-        </p>
+      </div>
+    </header>
+
+    <!-- NEW: Live Internet Scan -->
+    <div class="glass-card p-6 md:p-8 rounded-3xl mb-8 data-no-print">
+      <div class="flex flex-col md:flex-row items-center gap-4 justify-between">
+        <div class="flex items-center gap-3">
+          <div class="p-3 bg-blue-500/20 rounded-xl">
+            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+          </div>
+          <div>
+            <h2 class="text-2xl font-display font-bold text-white leading-tight">Live Internet Scan</h2>
+            <p class="text-xs text-slate-400">Scrape & analyze Reddit feeds instantly</p>
+          </div>
+        </div>
+        
+        <div class="flex flex-1 max-w-xl w-full gap-2">
+          <input type="text" id="liveTopic" placeholder="e.g. Artificial Intelligence, Tesla, Space"
+            class="glass-input w-full px-5 py-3 rounded-xl font-light">
+          <button onclick="scrapeLive()" id="scrapeBtn"
+            class="btn-primary px-8 py-3 text-white font-bold rounded-xl shadow-lg flex items-center justify-center">
+            <span>Scan Network</span>
+            <svg id="loadingLive" class="animate-spin ml-2 h-5 w-5 text-white hidden" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cards (Manual Analysis) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 data-no-print">
+      <!-- ... Previous Single Analysis Card ... -->
+      <div class="glass-card p-8 rounded-3xl">
+        <h2 class="text-xl font-display font-bold text-white mb-4">Neural Text Processor</h2>
+        <textarea id="inputText" placeholder="Type a phrase to run through the neural network..."
+          class="glass-input w-full p-4 rounded-xl mb-6 h-32 resize-none font-light placeholder-slate-500"></textarea>
+          
+        <div class="flex justify-between items-center">
+          <button onclick="analyzeText()" id="analyzeBtn" class="bg-indigo-600 hover:bg-indigo-500 transition-colors px-8 py-3 text-white font-semibold rounded-xl shadow-lg flex items-center justify-center min-w-[140px]">
+            <span>Analyze</span>
+            <svg id="loadingSingle" class="animate-spin ml-2 h-5 w-5 text-white hidden" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+          </button>
+          <div class="text-right">
+            <p class="text-slate-400 text-xs mb-1 uppercase tracking-widest font-bold">Predicted Emotion</p>
+            <p id="singleResult" class="text-3xl font-display font-black opacity-0 transition-opacity duration-500">-</p>
+          </div>
+        </div>
       </div>
 
       <!-- CSV Analyzer -->
-      <div class="bg-white p-6 rounded-2xl shadow">
-        <h2 class="text-xl font-semibold mb-4 text-gray-700">Analyze CSV of Tweets</h2>
-        <input type="file" id="csvFile" accept=".csv"
-          class="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
-                 file:rounded-full file:border-0 file:text-sm file:font-semibold
-                 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
-        <button onclick="analyzeCSV()" 
-          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-          Upload & Analyze
+      <div class="glass-card p-8 rounded-3xl flex flex-col justify-center">
+        <h2 class="text-xl font-display font-bold text-white mb-4">Batch CSV Processing</h2>
+        <div class="border-2 border-dashed border-slate-700/50 rounded-xl p-6 text-center hover:border-purple-500/50 transition-colors bg-black/20 mb-6">
+          <label for="csvFile" class="cursor-pointer block">
+            <svg class="mx-auto h-10 w-10 text-slate-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span class="text-purple-400 font-medium font-display text-lg block" id="fileLabel">Browse for .csv</span>
+            <span class="text-xs text-slate-500">Must contain a 'text' column</span>
+            <input id="csvFile" type="file" class="hidden" accept=".csv">
+          </label>
+        </div>
+        <button onclick="analyzeCSV()" id="batchBtn" class="w-full bg-purple-600 hover:bg-purple-500 transition-colors px-8 py-3 text-white font-semibold rounded-xl shadow-lg flex items-center justify-center">
+          <span>Extract Deep Insights</span>
+          <svg id="loadingBatch" class="animate-spin ml-2 h-5 w-5 text-white hidden" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
         </button>
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="bg-white mt-8 p-6 rounded-2xl shadow">
-      <h2 class="text-xl font-semibold mb-4 text-gray-700">Results Table</h2>
-      <div class="overflow-x-auto">
-        <table class="w-full border border-gray-200 text-sm">
-          <thead class="bg-blue-600 text-white">
-            <tr>
-              <th class="px-4 py-2 border">ID</th>
-              <th class="px-4 py-2 border">Tweet</th>
-              <th class="px-4 py-2 border">Sentiment</th>
-            </tr>
-          </thead>
-          <tbody id="resultsTable"></tbody>
-        </table>
+    <!-- Analytics Dashboard Area -->
+    <div id="analyticsSection" class="hidden opacity-0 transition-opacity duration-1000">
+      
+      <!-- NEW: Apriori Data Mining -->
+      <div id="dataMiningSection" class="glass-card p-6 md:p-8 rounded-3xl mb-8 relative overflow-hidden">
+        <div class="absolute -right-20 -top-20 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl mix-blend-screen data-no-print"></div>
+        <h2 class="text-2xl font-display font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-2">🧠 Apriori Intelligence Rules</h2>
+        <p class="text-sm text-slate-400 mb-6">Uncovering hidden keyword associations and frequent textual patterns using the Apriori algorithm.</p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="aprioriGrid">
+          <!-- Dynamically populated -->
+        </div>
       </div>
-    </div>
 
-    <!-- Chart -->
-    <div class="bg-white mt-8 p-6 rounded-2xl shadow">
-      <h2 class="text-xl font-semibold mb-4 text-gray-700">Sentiment Distribution</h2>
-      <canvas id="sentimentChart"></canvas>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Chart -->
+        <div class="glass-card p-8 rounded-3xl lg:col-span-1 flex flex-col justify-center">
+          <h2 class="text-xl font-display font-bold text-white mb-6 text-center">Emotion Distribution</h2>
+          <div class="w-full flex justify-center aspect-square">
+            <canvas id="sentimentChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="glass-card p-6 md:p-8 rounded-3xl lg:col-span-2">
+          <h2 class="text-xl font-display font-bold text-white mb-6">NLP Inference Report</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-white/10 text-slate-400 text-xs uppercase tracking-widest">
+                  <th class="pb-4 pr-4 font-bold">ID</th>
+                  <th class="pb-4 px-4 font-bold w-2/3">Data Point</th>
+                  <th class="pb-4 pl-4 font-bold text-right">Class</th>
+                </tr>
+              </thead>
+              <tbody id="resultsTable" class="text-sm"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    // Simple sentiment lexicon
-    const lexicon = {
-      "love": 2, "happy": 2, "excellent": 3, "amazing": 3,
-      "good": 1, "like": 1, "great": 2, "best": 3,
-      "bad": -2, "sad": -2, "angry": -3, "terrible": -3,
-      "worst": -3, "awful": -3, "hate": -3, "disappointed": -2,
-      "okay": 0, "fine": 0
-    };
+    const API_BASE = '/api';
 
-    function getSentiment(text) {
-      let score = 0;
-      const words = (text || "").toLowerCase().split(/\\s+/);
-      words.forEach(word => {
-        if (lexicon[word] !== undefined) score += lexicon[word];
-      });
-      if (score > 1) return "Positive";
-      if (score < -1) return "Negative";
-      return "Neutral";
+    document.getElementById('csvFile').addEventListener('change', function(e) {
+      if (e.target.files.length > 0) {
+        document.getElementById('fileLabel').innerText = e.target.files[0].name;
+      }
+    });
+
+    function setBtnLoading(btnId, loaderId, state, originalText) {
+      const btn = document.getElementById(btnId);
+      const loader = document.getElementById(loaderId);
+      if (state) {
+        btn.classList.add('opacity-75', 'cursor-not-allowed');
+        btn.querySelector('span').innerText = 'Neural Engine Processing...';
+        loader.classList.remove('hidden');
+      } else {
+        btn.classList.remove('opacity-75', 'cursor-not-allowed');
+        btn.querySelector('span').innerText = originalText;
+        loader.classList.add('hidden');
+      }
     }
 
-    function analyzeText() {
+    function getColorClass(emotion) {
+      const e = (emotion || "").toLowerCase();
+      const map = {
+        'joy': 'status-joy', 'happiness': 'status-joy', 'positive': 'status-positive',
+        'anger': 'status-anger', 'annoyance': 'status-anger', 'negative': 'status-negative',
+        'sadness': 'status-sadness', 'fear': 'status-fear',
+        'surprise': 'status-surprise', 'love': 'status-love', 'neutral': 'status-neutral'
+      };
+      return map[e] || 'status-neutral';
+    }
+
+    async function analyzeText() {
       const text = document.getElementById("inputText").value;
-      const result = getSentiment(text);
-      document.getElementById("singleResult").innerText = result;
-      document.getElementById("singleResult").className =
-        result === "Positive" ? "font-bold text-green-600" :
-        result === "Negative" ? "font-bold text-red-600" :
-        "font-bold text-gray-600";
+      if (!text.trim()) return;
+      setBtnLoading('analyzeBtn', 'loadingSingle', true, 'Analyze');
+      const resEl = document.getElementById("singleResult");
+      resEl.classList.remove('opacity-100');
+
+      try {
+        const response = await fetch(`${API_BASE}/analyze`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          resEl.innerText = data.sentiment;
+          resEl.className = `text-3xl font-display font-black opacity-100 transition-opacity ${getColorClass(data.sentiment)}`;
+        } else alert('Error: ' + data.error);
+      } catch (err) { alert('Failed to connect to backend.'); } 
+      finally { setBtnLoading('analyzeBtn', 'loadingSingle', false, 'Analyze'); }
     }
 
-    function analyzeCSV() {
-      const file = document.getElementById("csvFile").files[0];
-      if (!file) return alert("Please upload a CSV file!");
+    async function analyzeCSV() {
+      const fileInput = document.getElementById("csvFile");
+      if (!fileInput.files.length) return alert("Select a CSV file.");
+      const formData = new FormData(); formData.append("file", fileInput.files[0]);
+      setBtnLoading('batchBtn', 'loadingBatch', true, 'Extract Deep Insights');
 
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-          const rows = results.data;
-          const tableBody = document.getElementById("resultsTable");
-          tableBody.innerHTML = "";
-          let counts = {Positive:0, Negative:0, Neutral:0};
+      try {
+        const response = await fetch(`${API_BASE}/analyze-batch`, { method: 'POST', body: formData });
+        const data = await response.json();
+        if (response.ok) renderDashboard(data); else alert('Error: ' + data.error);
+      } catch (err) { alert('Backend error.'); } 
+      finally { setBtnLoading('batchBtn', 'loadingBatch', false, 'Extract Deep Insights'); }
+    }
 
-          rows.forEach(row => {
-            const sentiment = getSentiment(row.text || "");
-            counts[sentiment]++;
-            const tr = `<tr>
-                          <td class="border px-4 py-2">${row.id || ""}</td>
-                          <td class="border px-4 py-2">${row.text || ""}</td>
-                          <td class="border px-4 py-2 font-bold ${
-                              sentiment === "Positive" ? "text-green-600" :
-                              sentiment === "Negative" ? "text-red-600" : "text-gray-600"
-                            }">${sentiment}</td>
-                        </tr>`;
-            tableBody.innerHTML += tr;
-          });
+    async function scrapeLive() {
+      const topic = document.getElementById('liveTopic').value || 'technology';
+      setBtnLoading('scrapeBtn', 'loadingLive', true, 'Scan Network');
+      
+      try {
+        const response = await fetch(`${API_BASE}/scrape?topic=${encodeURIComponent(topic)}`);
+        const data = await response.json();
+        if (response.ok) renderDashboard(data); else alert('Error: ' + data.error);
+      } catch (err) { alert('API failed to reach internet feeds.'); } 
+      finally { setBtnLoading('scrapeBtn', 'loadingLive', false, 'Scan Network'); }
+    }
 
-          // Chart.js
-          const ctx = document.getElementById("sentimentChart").getContext("2d");
-          if (window.sentimentChart) window.sentimentChart.destroy();
-          window.sentimentChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-              labels: ["Positive", "Negative", "Neutral"],
-              datasets: [{
-                label: "Sentiment Count",
-                data: [counts.Positive, counts.Negative, counts.Neutral],
-                backgroundColor: ["#28a745", "#dc3545", "#6c757d"]
-              }]
-            },
-            options: { responsive: true, plugins: { legend: { position: "bottom" } } }
-          });
+    function renderDashboard(data) {
+      const section = document.getElementById('analyticsSection');
+      section.classList.remove('hidden'); void section.offsetWidth; section.classList.add('opacity-100');
+
+      // 1. Render Table
+      const tb = document.getElementById("resultsTable"); tb.innerHTML = "";
+      data.results.forEach(row => {
+        tb.innerHTML += `<tr class="border-b border-white/5 hover:bg-white/5">
+          <td class="py-3 pr-4 text-slate-500 font-mono text-xs">${row.id}</td>
+          <td class="py-3 px-4 text-slate-300 font-light text-[13px] leading-relaxed">${row.text}</td>
+          <td class="py-3 pl-4 text-right font-bold tracking-wide ${getColorClass(row.sentiment)}">${row.sentiment}</td>
+        </tr>`;
+      });
+
+      // 2. Render Apriori Rules
+      const grid = document.getElementById("aprioriGrid"); grid.innerHTML = "";
+      if (data.apriori_rules && data.apriori_rules.length > 0) {
+        data.apriori_rules.forEach(rule => {
+          grid.innerHTML += `
+            <div class="rule-card rounded-2xl p-5 border border-white/10 shadow-lg">
+              <div class="text-xs text-slate-500 font-mono mb-2 uppercase tracking-widest">Rule Connection</div>
+              <div class="font-bold text-white mb-1"><span class="text-orange-400">${rule.antecedents.join(', ')}</span> ➔</div>
+              <div class="font-bold text-white mb-3 pl-4">➔ <span class="text-yellow-400">${rule.consequents.join(', ')}</span></div>
+              <div class="flex justify-between text-xs text-slate-400 bg-black/30 p-2 rounded-lg">
+                <span>Conf: <strong class="text-white">${rule.confidence}</strong></span>
+                <span>Lift: <strong class="text-white">${rule.lift}</strong></span>
+              </div>
+            </div>`;
+        });
+      } else {
+        grid.innerHTML = `<div class="col-span-full text-slate-500 text-sm italic">Not enough volume to generate strong association rules.</div>`;
+      }
+
+      // 3. Render Chart
+      const colors = {
+        'Joy': '#facc15', 'Positive': '#4ade80', 'Anger': '#ef4444', 'Negative': '#f87171',
+        'Sadness': '#60a5fa', 'Fear': '#a78bfa', 'Surprise': '#fb923c', 'Love': '#f472b6', 'Neutral': '#94a3b8'
+      };
+      
+      const labels = Object.keys(data.counts);
+      const values = Object.values(data.counts);
+      const bgColors = labels.map(l => colors[l] || colors['Neutral']);
+
+      const ctx = document.getElementById("sentimentChart").getContext("2d");
+      Chart.defaults.color = '#cbd5e1';
+      if (window.distChart) window.distChart.destroy();
+      
+      window.distChart = new Chart(ctx, {
+        type: 'polarArea',
+        data: {
+          labels: labels,
+          datasets: [{ data: values, backgroundColor: bgColors.map(c => c + '80'), borderColor: bgColors, borderWidth: 1 }]
+        },
+        options: {
+          responsive: true, scales: { r: { ticks: { backdropColor: 'transparent', color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.05)' } } },
+          plugins: { legend: { position: 'bottom' } }
         }
+      });
+    }
+
+    function exportPDF() {
+      // Hide buttons temporarily to keep report clean
+      const elementsToHide = document.querySelectorAll('.data-no-print');
+      elementsToHide.forEach(el => el.style.display = 'none');
+      
+      const element = document.getElementById('reportArea');
+      html2pdf().from(element).set({
+        margin: 0.5,
+        filename: 'Tweetverse_AI_Report.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+      }).save().then(() => {
+        elementsToHide.forEach(el => el.style.display = '');
       });
     }
   </script>
