@@ -1,0 +1,10 @@
+flask
+flask-cors
+pandas
+textblob
+transformers
+torch
+mlxtend
+scikit-learn
+requests
+beautifulsoup4
