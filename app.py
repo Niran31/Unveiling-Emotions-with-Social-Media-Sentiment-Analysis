@@ -1,13 +1,64 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from nlp_engine import get_sentiment, analyze_batch, mine_frequent_patterns
+from nlp_engine import get_sentiment, analyze_batch, mine_frequent_patterns, extract_entities, extract_keywords
 import pandas as pd
 import requests
 import xml.etree.ElementTree as ET
 import urllib.parse
+import sqlite3
+import json
+import os
+from datetime import datetime
 
 app = Flask(__name__, static_url_path='', static_folder='.')
 CORS(app)
+
+# =============================================
+# SQLite Database Setup
+# =============================================
+DB_PATH = os.path.join(os.path.dirname(__file__), 'tweetverse_history.db')
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS analysis_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            source TEXT NOT NULL,
+            topic TEXT,
+            total_items INTEGER,
+            counts_json TEXT,
+            top_emotion TEXT,
+            entities_json TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+def save_to_history(source, topic, total_items, counts, top_emotion, entities):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('''
+            INSERT INTO analysis_history (timestamp, source, topic, total_items, counts_json, top_emotion, entities_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            datetime.now().isoformat(),
+            source,
+            topic or '',
+            total_items,
+            json.dumps(counts),
+            top_emotion,
+            json.dumps(entities)
+        ))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"DB Write Error: {e}")
+
 
 @app.route('/')
 def index():
@@ -47,6 +98,18 @@ def analyze_batch_endpoint():
                 # Perform Data Mining Apriori
                 patterns = mine_frequent_patterns(texts)
                 analysis['apriori_rules'] = patterns
+
+                # NEW: Named Entity Recognition
+                entities = extract_entities(texts)
+                analysis['entities'] = entities
+
+                # NEW: Keyword Extraction for Word Cloud
+                keywords = extract_keywords(texts)
+                analysis['keywords'] = keywords
+
+                # NEW: Save to History
+                top_emotion = max(analysis['counts'], key=analysis['counts'].get) if analysis['counts'] else 'N/A'
+                save_to_history('CSV Upload', file.filename, len(texts), analysis['counts'], top_emotion, entities[:5])
                     
                 return jsonify(analysis)
             except Exception as e:
@@ -84,11 +147,65 @@ def scrape_live():
         # Data Mining
         patterns = mine_frequent_patterns(texts)
         analysis['apriori_rules'] = patterns
+
+        # NEW: Named Entity Recognition
+        entities = extract_entities(texts)
+        analysis['entities'] = entities
+
+        # NEW: Keyword Extraction for Word Cloud
+        keywords = extract_keywords(texts)
+        analysis['keywords'] = keywords
         
+        # NEW: Save to History
+        top_emotion = max(analysis['counts'], key=analysis['counts'].get) if analysis['counts'] else 'N/A'
+        save_to_history('Live Scan', topic, len(texts), analysis['counts'], top_emotion, entities[:5])
+
         return jsonify(analysis)
         
     except Exception as e:
         return jsonify({'error': f"Scraping error: {str(e)}"}), 500
+
+
+# =============================================
+# NEW: History API
+# =============================================
+@app.route('/api/history', methods=['GET'])
+def get_history():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute('SELECT * FROM analysis_history ORDER BY id DESC LIMIT 20')
+        rows = c.fetchall()
+        conn.close()
+        
+        history = []
+        for row in rows:
+            history.append({
+                'id': row['id'],
+                'timestamp': row['timestamp'],
+                'source': row['source'],
+                'topic': row['topic'],
+                'total_items': row['total_items'],
+                'counts': json.loads(row['counts_json']),
+                'top_emotion': row['top_emotion'],
+                'entities': json.loads(row['entities_json'])
+            })
+        return jsonify(history)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/history', methods=['DELETE'])
+def clear_history():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.cursor().execute('DELETE FROM analysis_history')
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'History cleared'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
