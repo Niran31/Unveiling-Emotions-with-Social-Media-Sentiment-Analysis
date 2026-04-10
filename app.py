@@ -120,25 +120,25 @@ def analyze_batch_endpoint():
 def scrape_live():
     topic = request.args.get('topic', 'technology')
     safe_topic = urllib.parse.quote(topic)
-    url = f"https://news.google.com/rss/search?q={safe_topic}&hl=en-US&gl=US&ceid=US:en"
+    url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={safe_topic}&utf8=&format=json&srlimit=25"
     
     try:
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            'User-Agent': 'Tweetverse/2.0 (student@university.edu)'
         }
         response = requests.get(url, headers=headers, timeout=10)
         
         if response.status_code != 200:
             return jsonify({'error': f'Failed to scrape live data. Status {response.status_code}'}), 500
             
-        root = ET.fromstring(response.content)
+        data = response.json()
         texts = []
-        # Parse Google News RSS XML
-        for item in root.findall(".//item")[:25]:
-            title_node = item.find("title")
-            if title_node is not None and title_node.text:
-                # the title often contains ' - Source Name' at the end, but it's fine for text mining
-                texts.append(title_node.text)
+        import re
+        for item in data.get('query', {}).get('search', []):
+            snippet = item.get('snippet', '')
+            clean_text = re.sub(r'<[^>]+>', '', snippet)
+            if clean_text:
+                texts.append(f"{item.get('title')}: {clean_text}")
             
         if not texts:
             return jsonify({'error': 'No internet buzz found for this topic.'}), 404
