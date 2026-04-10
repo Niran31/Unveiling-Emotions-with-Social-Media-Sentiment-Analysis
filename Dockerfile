@@ -13,6 +13,7 @@ WORKDIR $HOME/app
 # Copy requirements file and install dependencies
 COPY --chown=user requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install torch --no-cache-dir --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
 # Download the Spacy model explicitly during the build step
