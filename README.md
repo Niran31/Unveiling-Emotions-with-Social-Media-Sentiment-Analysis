@@ -1,3 +1,13 @@
+---
+title: Sentiment Analyzer Pro
+emoji: 🎭
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+short_description: Deep learning emotional analysis using local DistilBERT
+---
+
 # 🎭 Unveiling Emotions with Social Media Sentiment Analysis 
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
