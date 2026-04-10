@@ -8,3 +8,4 @@ mlxtend
 scikit-learn
 requests
 beautifulsoup4
+spacy
