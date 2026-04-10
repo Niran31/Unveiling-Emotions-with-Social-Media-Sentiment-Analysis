@@ -1,6 +1,11 @@
 # 🎭 Unveiling Emotions with Social Media Sentiment Analysis 
 
-An advanced platform that leverages **Deep Learning Neural Networks (Transformers)** and **Data Mining** to uncover complex emotions hidden within public and social media text streams. 
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-orange)
+![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Transformers-yellow)
+![Flask](https://img.shields.io/badge/Flask-Backend-green)
+
+An advanced, production-grade platform that leverages **Deep Learning Neural Networks (Transformers)** and **Data Mining** to uncover complex emotions hidden within public and social media text streams. 
 
 This system breaks past basic polarity algorithms, identifying multidimensional emotional arrays (Joy, Anger, Sadness, Fear, Surprise, Love) while processing live dynamic data points. Its stunning glassmorphism dashboard makes it highly applicable for **marketing agencies, public opinion monitoring, and behavioral research**.
 
@@ -8,10 +13,10 @@ This system breaks past basic polarity algorithms, identifying multidimensional 
 
 ## ⚡ Core Upgraded Architecture
 
-1. **Neural AI Engine:** Utilizes Hugging Face Transformers (`bhadresh-savani/distilbert-base-uncased-emotion`) via PyTorch to parse heavy sentence structures contextually for ultra-high accuracy emotion detection.
+1. **Neural AI Engine:** Utilizes Hugging Face Transformers (`distilbert/distilbert-base-uncased-finetuned-sst-2-english`) via PyTorch to parse heavy sentence structures contextually for ultra-high accuracy emotion detection.
 2. **Apriori Data Mining:** Implements `mlxtend`'s Apriori Algorithms to automatically establish Confidence and Lift mathematical connections between keyword associations across large internet clusters.
-3. **Live Internet Scraper:** Connects autonomously to live public Reddit RSS feeds (no API key required) to fetch, process, and map real-time sociological chatter.
-4. **Premium UI & Reporting:** An immersive frontend engineered with TailwindCSS, dynamically rendered Chart.js, and instant `html2pdf.js` PDF reporting capabilities.
+3. **Live Internet Scraper:** Connects autonomously to live public RSS feeds (e.g., Reddit) to fetch, process, and map real-time sociological chatter.
+4. **Premium UI & Reporting:** An immersive frontend engineered with modern glassmorphism, dynamic animations, dynamically rendered Chart.js, and instant `html2pdf.js` PDF reporting capabilities.
 
 ---
 
