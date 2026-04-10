@@ -120,10 +120,12 @@ def analyze_batch_endpoint():
 def scrape_live():
     topic = request.args.get('topic', 'technology')
     safe_topic = urllib.parse.quote(topic)
-    url = f"https://www.reddit.com/search.rss?q={safe_topic}&sort=new"
+    url = f"https://news.google.com/rss/search?q={safe_topic}&hl=en-US&gl=US&ceid=US:en"
     
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Tweetverse/2.0'}
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
         response = requests.get(url, headers=headers, timeout=10)
         
         if response.status_code != 200:
@@ -131,10 +133,11 @@ def scrape_live():
             
         root = ET.fromstring(response.content)
         texts = []
-        # Parse Atom feed XML
-        for entry in root.findall("{http://www.w3.org/2005/Atom}entry")[:25]:
-            title_node = entry.find("{http://www.w3.org/2005/Atom}title")
+        # Parse Google News RSS XML
+        for item in root.findall(".//item")[:25]:
+            title_node = item.find("title")
             if title_node is not None and title_node.text:
+                # the title often contains ' - Source Name' at the end, but it's fine for text mining
                 texts.append(title_node.text)
             
         if not texts:
