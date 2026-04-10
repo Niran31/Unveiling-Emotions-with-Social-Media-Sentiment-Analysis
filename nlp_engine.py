@@ -78,8 +78,8 @@ def mine_frequent_patterns(texts):
         te_ary = te.fit(dataset).transform(dataset)
         df = pd.DataFrame(te_ary, columns=te.columns_)
 
-        # Apriori: min_support 0.05 because texts are sparse
-        frequent_itemsets = apriori(df, min_support=0.05, use_colnames=True)
+        # Apriori: Increase min_support and limit max_len to prevent exponential CPU freeze on dense text
+        frequent_itemsets = apriori(df, min_support=0.1, use_colnames=True, max_len=3)
         if len(frequent_itemsets) == 0:
             return []
             
