@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tweetverse Deep NLP Dashboard 2.0</title>
+  <title>Tweetverse AI Sentiment Dashboard 3.0</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -30,9 +30,7 @@
   </script>
   
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- PDF Export Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <!-- Word Cloud Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
   
   <style>
@@ -49,252 +47,635 @@
     
     .glass-card {
       background: rgba(255, 255, 255, 0.02);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.05);
       border-top: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-      transition: transform 0.3s ease, border-color 0.3s ease;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .glass-card:hover { border-color: rgba(99, 102, 241, 0.3); }
+    .glass-card:hover { 
+      border-color: rgba(99, 102, 241, 0.35);
+      box-shadow: 0 15px 45px rgba(99, 102, 241, 0.08);
+    }
     
     .glass-input {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       color: #fff;
+      transition: all 0.3s ease;
     }
-    .glass-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 10px rgba(99, 102, 241, 0.2); }
+    .glass-input:focus { 
+      outline: none; 
+      border-color: #818cf8; 
+      box-shadow: 0 0 15px rgba(129, 140, 248, 0.25);
+    }
     
     .btn-primary {
-      background: linear-gradient(135deg, #4f46e5 0%, #d946ef 100%);
-      transition: opacity 0.3s, transform 0.2s;
+      background: linear-gradient(135deg, #4f46e5 0%, #a855f7 100%);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35);
     }
-    .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
+    .btn-primary:hover { 
+      opacity: 0.95; 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(79, 70, 229, 0.45);
+    }
+    .btn-primary:active {
+      transform: translateY(0px);
+    }
     
-    .status-positive { color: #4ade80; }
+    .status-positive { color: #34d399; }
     .status-negative { color: #f87171; }
     .status-neutral { color: #94a3b8; }
-    .status-joy { color: #facc15; }
-    .status-anger { color: #ef4444; }
+    .status-joy { color: #fbbf24; }
+    .status-anger { color: #f87171; }
     .status-sadness { color: #60a5fa; }
-    .status-fear { color: #a78bfa; }
+    .status-fear { color: #c084fc; }
     .status-surprise { color: #fb923c; }
     .status-love { color: #f472b6; }
     
     .rule-card {
-      background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.3s ease;
+    }
+    .rule-card:hover {
+      border-color: rgba(251, 146, 60, 0.25);
+      transform: translateY(-2px);
     }
 
     #wordCloudCanvas {
       width: 100%;
       height: 300px;
     }
+
+    .nav-btn {
+      border-left: 4px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .nav-btn.active {
+      border-left-color: #818cf8;
+      background: rgba(99, 102, 241, 0.12);
+      color: #a5b4fc;
+    }
+    .nav-btn:not(.active):hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: #fff;
+    }
+
+    /* Elegant custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Print styling optimized for exports */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+      .data-no-print {
+        display: none !important;
+      }
+      main {
+        padding: 0 !important;
+      }
+      .glass-card {
+        background: transparent !important;
+        box-shadow: none !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #0f172a !important;
+      }
+      h1, h2, h3, p {
+        color: #0f172a !important;
+        background-clip: unset !important;
+        -webkit-background-clip: unset !important;
+        text-fill-color: unset !important;
+        -webkit-text-fill-color: unset !important;
+        background-image: none !important;
+      }
+      .page-break {
+        page-break-before: always !important;
+      }
+    }
   </style>
 </head>
-<body class="relative overflow-x-hidden" id="reportArea">
+<body class="relative min-h-screen text-slate-100 flex flex-col md:flex-row overflow-x-hidden" id="reportArea">
 
-  <!-- Background decorative blobs (hidden when printing) -->
-  <div class="absolute top-0 -left-4 w-72 h-72 bg-purple-600 rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-blob data-no-print"></div>
-  <div class="absolute top-0 -right-4 w-72 h-72 bg-blue-600 rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-blob animation-delay-2000 data-no-print"></div>
+  <!-- Background decorative blobs -->
+  <div class="absolute top-0 -left-4 w-72 h-72 bg-purple-600 rounded-full mix-blend-screen filter blur-[120px] opacity-15 animate-blob data-no-print pointer-events-none"></div>
+  <div class="absolute top-0 -right-4 w-72 h-72 bg-blue-600 rounded-full mix-blend-screen filter blur-[120px] opacity-15 animate-blob animation-delay-2000 data-no-print pointer-events-none"></div>
 
-  <div class="max-w-7xl mx-auto relative z-10 p-4 md:p-8">
-    <header class="flex flex-col md:flex-row justify-between items-center mb-12 mt-2">
-      <div class="flex-1"></div>
-      <div class="flex-1 text-center">
-        <h1 class="text-4xl md:text-6xl font-display font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 mb-2 tracking-tight">
-          Tweetverse AI Engine 2.0
+  <!-- Sidebar Navigation -->
+  <aside class="w-full md:w-80 border-b md:border-b-0 md:border-r border-white/10 bg-[#050c18]/80 md:bg-transparent backdrop-blur-xl md:backdrop-blur-none flex flex-col p-6 shrink-0 z-30 data-no-print md:h-screen md:sticky md:top-0">
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-display font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 tracking-tight flex items-center gap-2">
+          <span>Tweetverse AI 3.0</span>
         </h1>
-        <p class="text-slate-400 text-sm md:text-lg font-light tracking-wide">Transformers Deep Learning, Data Mining & NER</p>
+        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mt-1">Social Sentiment Intelligence</p>
       </div>
-      <div class="flex-1 flex justify-end mt-4 md:mt-0 gap-3">
-        <button onclick="toggleHistory()" class="bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 px-5 py-2 rounded-xl backdrop-blur-md border border-indigo-500/30 transition-all font-semibold shadow-lg data-no-print flex items-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          History
-        </button>
-        <button onclick="exportPDF()" class="bg-white/5 hover:bg-white/10 text-white px-5 py-2 rounded-xl backdrop-blur-md border border-white/10 transition-all font-semibold shadow-lg data-no-print flex items-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-          Export
-        </button>
+    </div>
+    
+    <!-- Navigation Buttons -->
+    <nav class="flex-1 space-y-1.5">
+      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold active text-slate-400">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <span>Analytics Hub</span>
+      </button>
+      <button onclick="switchTab('single')" id="nav-single" class="nav-btn w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-slate-400">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        <span>Neural Processor</span>
+      </button>
+      <button onclick="switchTab('batch')" id="nav-batch" class="nav-btn w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-slate-400">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        <span>Batch Upload</span>
+      </button>
+      <button onclick="switchTab('live')" id="nav-live" class="nav-btn w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-slate-400">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+        <span>Live Scan</span>
+      </button>
+      <button onclick="switchTab('history')" id="nav-history" class="nav-btn w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold text-slate-400">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>System History</span>
+      </button>
+    </nav>
+    
+    <!-- Sidebar Footer -->
+    <div class="pt-4 border-t border-white/5 space-y-3">
+      <button onclick="exportPDF()" class="w-full bg-white/5 hover:bg-white/10 text-white py-2.5 rounded-xl border border-white/10 transition-all font-semibold shadow-lg flex items-center justify-center gap-2 text-sm">
+        <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        Export Report
+      </button>
+      <div class="text-[10px] text-slate-500 text-center font-medium">Version 3.0.0 • Glassmorphic Core</div>
+    </div>
+  </aside>
+
+  <!-- Main View Container -->
+  <main class="flex-1 p-6 md:p-10 min-h-screen overflow-y-auto z-10 flex flex-col">
+    <!-- View Header (Hidden when printing) -->
+    <header class="flex flex-col sm:flex-row justify-between sm:items-center mb-8 border-b border-white/5 pb-5 data-no-print">
+      <div>
+        <h2 id="viewTitle" class="text-3xl font-display font-extrabold text-white tracking-tight">Analytics Hub</h2>
+        <p id="viewSubtitle" class="text-xs text-slate-400 mt-1">Real-time aggregate visualization of deep learning predictions and semantics.</p>
+      </div>
+      
+      <div class="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl mt-4 sm:mt-0 max-w-max self-start sm:self-center">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-xs text-slate-300 font-mono" id="currentDateBadge"></span>
       </div>
     </header>
 
-    <!-- NEW: History Panel (Hidden by default) -->
-    <div id="historyPanel" class="glass-card p-6 md:p-8 rounded-3xl mb-8 hidden data-no-print">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-display font-bold text-white leading-tight flex items-center gap-2">
-          <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          Recent Analysis History
-        </h2>
-        <button onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-300 transition-colors py-1 px-3 border border-red-500/30 rounded bg-red-500/10">Clear History</button>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="border-b border-white/10 text-slate-400 text-xs uppercase tracking-widest">
-              <th class="pb-3 pr-4 font-bold">Time</th>
-              <th class="pb-3 px-4 font-bold">Source/Topic</th>
-              <th class="pb-3 px-4 font-bold">Items</th>
-              <th class="pb-3 px-4 font-bold">Top Emotion</th>
-              <th class="pb-3 pl-4 font-bold text-right">Top Entities</th>
-            </tr>
-          </thead>
-          <tbody id="historyTable" class="text-sm">
-            <!-- Dynamic History loaded here -->
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <!-- VIEWS SECTIONS -->
 
-
-    <!-- Live Internet Scan -->
-    <div class="glass-card p-6 md:p-8 rounded-3xl mb-8 data-no-print">
-      <div class="flex flex-col md:flex-row items-center gap-4 justify-between">
-        <div class="flex items-center gap-3">
-          <div class="p-3 bg-blue-500/20 rounded-xl">
-            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-          </div>
-          <div>
-            <h2 class="text-2xl font-display font-bold text-white leading-tight">Live Internet Scan</h2>
-            <p class="text-xs text-slate-400">Scrape & analyze Reddit feeds instantly</p>
-          </div>
-        </div>
-        
-        <div class="flex flex-1 max-w-xl w-full gap-2">
-          <input type="text" id="liveTopic" placeholder="e.g. Artificial Intelligence, Tesla, Space"
-            class="glass-input w-full px-5 py-3 rounded-xl font-light">
-          <button onclick="scrapeLive()" id="scrapeBtn"
-            class="btn-primary px-8 py-3 text-white font-bold rounded-xl shadow-lg flex items-center justify-center min-w-[170px]">
-            <span>Scan Network</span>
-            <svg id="loadingLive" class="animate-spin ml-2 h-5 w-5 text-white hidden" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Cards (Manual Analysis) -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 data-no-print">
-      <!-- Neural Text Processor Card -->
-      <div class="glass-card p-8 rounded-3xl">
-        <h2 class="text-xl font-display font-bold text-white mb-4">Neural Text Processor</h2>
-        <textarea id="inputText" placeholder="Type a phrase to run through the neural network..."
-          class="glass-input w-full p-4 rounded-xl mb-6 h-32 resize-none font-light placeholder-slate-500"></textarea>
-          
-        <div class="flex justify-between items-center">
-          <button onclick="analyzeText()" id="analyzeBtn" class="bg-indigo-600 hover:bg-indigo-500 transition-colors px-8 py-3 text-white font-semibold rounded-xl shadow-lg flex items-center justify-center min-w-[140px]">
-            <span>Analyze</span>
-            <svg id="loadingSingle" class="animate-spin ml-2 h-5 w-5 text-white hidden" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-          </button>
-          <div class="text-right">
-            <p class="text-slate-400 text-xs mb-1 uppercase tracking-widest font-bold">Predicted Emotion</p>
-            <p id="singleResult" class="text-3xl font-display font-black opacity-0 transition-opacity duration-500">-</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- CSV Analyzer -->
-      <div class="glass-card p-8 rounded-3xl flex flex-col justify-center">
-        <h2 class="text-xl font-display font-bold text-white mb-4">Batch CSV Processing</h2>
-        <div class="border-2 border-dashed border-slate-700/50 rounded-xl p-6 text-center hover:border-purple-500/50 transition-colors bg-black/20 mb-6 relative">
-          <label for="csvFile" class="cursor-pointer block">
-            <svg class="mx-auto h-10 w-10 text-slate-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            <span class="text-purple-400 font-medium font-display text-lg block" id="fileLabel">Browse for .csv</span>
-            <span class="text-xs text-slate-500">Must contain a 'text' column</span>
-            <input id="csvFile" type="file" class="hidden" accept=".csv">
-          </label>
-        </div>
-        <button onclick="analyzeCSV()" id="batchBtn" class="w-full bg-purple-600 hover:bg-purple-500 transition-colors px-8 py-3 text-white font-semibold rounded-xl shadow-lg flex items-center justify-center">
-          <span>Extract Deep Insights</span>
-          <svg id="loadingBatch" class="animate-spin ml-2 h-5 w-5 text-white hidden" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Analytics Dashboard Area -->
-    <div id="analyticsSection" class="hidden opacity-0 transition-opacity duration-1000">
+    <!-- TAB 1: Dashboard Overview -->
+    <section id="tab-dashboard" class="tab-view space-y-8">
       
-      <!-- Top Row: Entities & Word Cloud -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        
-        <!-- NEW: Named Entities -->
-        <div class="glass-card p-6 md:p-8 rounded-3xl flex flex-col">
-          <h2 class="text-xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-            Top Extracted Entities (NER)
-          </h2>
-          <p class="text-sm text-slate-400 mb-4">People, Organizations, and Locations driving the conversation.</p>
-          <div id="entitiesList" class="flex flex-wrap gap-2 overflow-y-auto max-h-[250px] pr-2">
-            <!-- Dynamically populated -->
-          </div>
+      <!-- Empty State View (Shown when no data exists) -->
+      <div id="dashboardEmptyState" class="glass-card rounded-3xl p-12 text-center max-w-2xl mx-auto my-12 flex flex-col items-center justify-center space-y-6">
+        <div class="p-5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400 relative">
+          <div class="absolute inset-0 bg-indigo-500/20 blur-md rounded-full"></div>
+          <svg class="w-12 h-12 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
         </div>
-
-        <!-- NEW: Word Cloud -->
-        <div class="glass-card p-6 md:p-8 rounded-3xl flex flex-col justify-center items-center">
-          <h2 class="text-xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-400 mb-2 w-full text-left flex items-center gap-2">
-            <svg class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>
-            Keyword Frequency Cloud
-          </h2>
-          <div class="w-full relative rounded-xl bg-black/20 overflow-hidden" style="height: 300px;">
-            <canvas id="wordCloudCanvas" class="absolute inset-0 w-full h-full"></canvas>
-          </div>
+        <div>
+          <h3 class="text-2xl font-display font-extrabold text-white mb-2">No Active Dataset</h3>
+          <p class="text-slate-400 text-sm max-w-md mx-auto">Ingest a social stream or upload a batch file to automatically construct your comprehensive visual analytics dashboard.</p>
         </div>
-
-      </div>
-
-      <!-- NEW: Apriori Data Mining -->
-      <div id="dataMiningSection" class="glass-card p-6 md:p-8 rounded-3xl mb-8 relative overflow-hidden">
-        <div class="absolute -right-20 -top-20 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl mix-blend-screen data-no-print"></div>
-        <h2 class="text-2xl font-display font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-2">🧠 Apriori Intelligence Rules</h2>
-        <p class="text-sm text-slate-400 mb-6">Uncovering hidden keyword associations and frequent textual patterns using the Apriori algorithm.</p>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="aprioriGrid">
-          <!-- Dynamically populated -->
+        <div class="flex flex-wrap justify-center gap-3 pt-2">
+          <button onclick="switchTab('batch')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition-all shadow-lg">Upload Batch File</button>
+          <button onclick="switchTab('live')" class="bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 font-semibold text-sm px-6 py-2.5 rounded-xl transition-all">Scan Live Network</button>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Chart -->
-        <div class="glass-card p-8 rounded-3xl lg:col-span-1 flex flex-col justify-center">
-          <h2 class="text-xl font-display font-bold text-white mb-6 text-center">Emotion Distribution</h2>
-          <div class="w-full flex justify-center aspect-square">
-            <canvas id="sentimentChart"></canvas>
+      <!-- Live Dashboard Section (Hidden until loaded) -->
+      <div id="analyticsDashboard" class="hidden space-y-8">
+        
+        <!-- Source Distribution Pills (hidden for CSV uploads) -->
+        <div id="sourceCountPills" class="hidden flex flex-wrap items-center gap-3">
+          <span class="text-[10px] text-slate-500 uppercase tracking-widest font-extrabold">Data Sources:</span>
+          <div id="sourceCountContainer" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- KPI Dashboard Stats -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div class="glass-card rounded-2xl p-5 flex flex-col">
+            <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Total Items Scanned</span>
+            <span id="kpiTotalItems" class="text-3xl font-display font-black text-white mt-2">-</span>
+          </div>
+          <div class="glass-card rounded-2xl p-5 flex flex-col">
+            <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Dominant Sentiment</span>
+            <span id="kpiDominantSentiment" class="text-3xl font-display font-black text-white mt-2">-</span>
+          </div>
+          <div class="glass-card rounded-2xl p-5 flex flex-col">
+            <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Average ML Confidence</span>
+            <span id="kpiAvgConfidence" class="text-3xl font-display font-black text-indigo-400 mt-2">-</span>
+          </div>
+          <div class="glass-card rounded-2xl p-5 flex flex-col">
+            <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Semantic Rules Found</span>
+            <span id="kpiRulesCount" class="text-3xl font-display font-black text-white mt-2">-</span>
+          </div>
+          <div class="glass-card rounded-2xl p-5 flex flex-col">
+            <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Top Named Entity</span>
+            <span id="kpiTopEntity" class="text-3xl font-display font-black text-white mt-2 truncate">-</span>
           </div>
         </div>
 
-        <!-- Table -->
-        <div class="glass-card p-6 md:p-8 rounded-3xl lg:col-span-2">
-          <h2 class="text-xl font-display font-bold text-white mb-6">NLP Inference Report</h2>
-          <div class="overflow-x-auto max-h-[500px]">
-            <table class="w-full text-left border-collapse">
-              <thead class="sticky top-0 bg-[#050b14] z-10 before:absolute before:inset-0 before:bg-white/5 before:-z-10">
-                <tr class="border-b border-white/10 text-slate-400 text-xs uppercase tracking-widest">
-                  <th class="pb-4 pr-4 font-bold">ID</th>
-                  <th class="pb-4 px-4 font-bold w-2/3">Data Point</th>
-                  <th class="pb-4 pl-4 font-bold text-right">Class</th>
-                </tr>
-              </thead>
-              <tbody id="resultsTable" class="text-sm"></tbody>
+        <!-- Charts Grid Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Emotion Polar Area Chart -->
+          <div class="glass-card p-6 md:p-8 rounded-3xl flex flex-col justify-center">
+            <h2 class="text-xl font-display font-bold text-white mb-6 text-center">Emotion Distribution</h2>
+            <div class="w-full flex justify-center aspect-square relative max-h-[300px]">
+              <canvas id="sentimentChart"></canvas>
+            </div>
+          </div>
+          
+          <!-- Chronological Emotional Flow Timeline Area Chart -->
+          <div class="glass-card p-6 md:p-8 rounded-3xl lg:col-span-2 flex flex-col">
+            <h2 class="text-xl font-display font-bold text-white mb-1">Chronological Emotional Flow</h2>
+            <p class="text-xs text-slate-500 mb-6">Rolling emotional valence of the stream (+1 positive/joyful, 0 neutral, -1 hostile/negative).</p>
+            <div class="flex-1 w-full relative min-h-[250px] max-h-[300px]">
+              <canvas id="valenceChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Insights Grid Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Top Extracted Entities (NER) -->
+          <div class="glass-card p-6 md:p-8 rounded-3xl flex flex-col">
+            <h2 class="text-xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+              Top Named Entities (NER)
+            </h2>
+            <p class="text-sm text-slate-400 mb-4">Click any entity badge below to drill down and filter related sentences.</p>
+            <div id="entitiesList" class="flex flex-wrap gap-2 overflow-y-auto max-h-[230px] pr-2">
+              <!-- Populated dynamic entities -->
+            </div>
+          </div>
+
+          <!-- Keyword Frequency Word Cloud -->
+          <div class="glass-card p-6 md:p-8 rounded-3xl flex flex-col justify-center items-center">
+            <h2 class="text-xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-400 mb-2 w-full text-left flex items-center gap-2">
+              <svg class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>
+              Semantic Word Cloud
+            </h2>
+            <div class="w-full relative rounded-2xl bg-black/20 overflow-hidden mt-2" style="height: 230px;">
+              <canvas id="wordCloudCanvas" class="absolute inset-0 w-full h-full"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aspect-Based Sentiment Heatmap -->
+        <div id="aspectHeatmapSection" class="glass-card p-6 md:p-8 rounded-3xl relative overflow-hidden hidden">
+          <div class="absolute -left-20 -top-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl mix-blend-screen pointer-events-none"></div>
+          <h2 class="text-2xl font-display font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2 flex items-center gap-2">
+            <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+            Aspect-Based Sentiment Analysis
+          </h2>
+          <p class="text-sm text-slate-400 mb-6">Each extracted topic aspect is cross-referenced with the emotion classifier. Cell intensity reflects frequency.</p>
+          <div class="overflow-x-auto border border-white/5 rounded-2xl bg-black/10">
+            <table id="aspectHeatmapTable" class="w-full text-left border-collapse">
+              <!-- Dynamically rendered heatmap -->
             </table>
           </div>
         </div>
+
+        <!-- Apriori Intelligence Association Rules -->
+        <div id="dataMiningSection" class="glass-card p-6 md:p-8 rounded-3xl relative overflow-hidden">
+          <div class="absolute -right-20 -top-20 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl mix-blend-screen pointer-events-none"></div>
+          <h2 class="text-2xl font-display font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-2">🧠 Apriori Semantic Graph & Rules</h2>
+          <p class="text-sm text-slate-400 mb-6">Uncovering transactional associations and frequent word clusters using the Apriori mining algorithm. Hover over elements to trace active relationships.</p>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" id="aprioriContentContainer">
+            <!-- Left 2 cols: SVG connection graph -->
+            <div class="lg:col-span-2 relative rounded-2xl bg-black/20 border border-white/5 overflow-hidden flex flex-col justify-center items-center" style="min-height: 330px;">
+              <svg id="aprioriSvg" class="w-full h-full min-h-[330px] max-h-[350px]"></svg>
+            </div>
+            <!-- Right 1 col: Rules details list -->
+            <div class="lg:col-span-1 flex flex-col h-[330px] overflow-y-auto pr-1 border border-white/5 rounded-2xl bg-black/10 p-4">
+              <h3 class="text-xs text-slate-400 uppercase tracking-widest font-extrabold mb-3">Discovered Channels</h3>
+              <div id="aprioriList" class="space-y-3">
+                 <!-- Populated rules -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Inference Table -->
+        <div class="glass-card p-6 md:p-8 rounded-3xl page-break">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+            <div>
+              <h2 class="text-xl font-display font-bold text-white">NLP Inference Report</h2>
+              <p class="text-xs text-slate-400 mt-1" id="filterStatusText">Showing all data points sorted sequentially.</p>
+            </div>
+            <!-- Clear Filter Button (Hidden by default) -->
+            <button id="clearFilterBtn" onclick="clearEntityFilter()" class="hidden text-xs text-indigo-400 hover:text-indigo-300 font-semibold py-1.5 px-3 border border-indigo-500/30 rounded-lg bg-indigo-500/10 transition-colors mt-2 sm:mt-0">
+              Clear Drilldown Filter
+            </button>
+          </div>
+          
+          <div class="overflow-x-auto max-h-[500px] border border-white/5 rounded-2xl">
+            <table class="w-full text-left border-collapse">
+              <thead class="sticky top-0 bg-[#050b14]/90 backdrop-blur-xl z-10">
+                <tr class="border-b border-white/10 text-slate-400 text-xs uppercase tracking-widest">
+                  <th class="py-4 pr-4 pl-6 font-bold">ID</th>
+                  <th class="py-4 px-4 font-bold w-2/3">Text Data Point</th>
+                  <th class="py-4 pl-4 pr-6 font-bold text-right">Predicted Emotion</th>
+                </tr>
+              </thead>
+              <tbody id="resultsTable" class="text-sm divide-y divide-white/5">
+                <!-- Dynamically populated table rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
-    </div>
-  </div>
+    </section>
+
+    <!-- TAB 2: Neural Single Sentence Analyzer -->
+    <section id="tab-single" class="tab-view space-y-8 hidden">
+      <div class="glass-card p-8 rounded-3xl max-w-3xl mx-auto my-6">
+        <h2 class="text-2xl font-display font-bold text-white mb-2">Neural Text Processor</h2>
+        <p class="text-xs text-slate-400 mb-6">Type a custom sentence, and watch the transformers deep learning model parse and output the primary emotional category.</p>
+        
+        <textarea id="inputText" placeholder="Write a sentence here to analyze (e.g., 'I am so excited and grateful for this incredible opportunity')..."
+          class="glass-input w-full p-5 rounded-2xl mb-6 h-36 resize-none font-light placeholder-slate-600 text-sm leading-relaxed"></textarea>
+          
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <button onclick="analyzeText()" id="analyzeBtn" class="btn-primary w-full sm:w-auto px-8 py-3 text-white font-semibold rounded-xl flex items-center justify-center gap-2">
+            <span>Analyze Emotion</span>
+            <svg id="loadingSingle" class="animate-spin h-5 w-5 text-white hidden" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+          </button>
+          
+          <div class="text-center sm:text-right border border-white/5 bg-white/5 rounded-2xl py-3 px-6 w-full sm:w-auto">
+            <p class="text-slate-500 text-[10px] uppercase tracking-widest font-extrabold mb-1">Predicted Emotion</p>
+            <p id="singleResult" class="text-3xl font-display font-black opacity-0 transition-all duration-500">-</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: Batch CSV Processing -->
+    <section id="tab-batch" class="tab-view space-y-8 hidden">
+      <div class="glass-card p-8 rounded-3xl max-w-3xl mx-auto my-6 text-center">
+        <h2 class="text-2xl font-display font-bold text-white mb-2">Batch CSV Processing</h2>
+        <p class="text-xs text-slate-400 mb-8">Process files containing columns of text to calculate aggregate patterns, named entity associations, and semantic flow.</p>
+        
+        <div class="border-2 border-dashed border-slate-700/50 rounded-2xl p-8 hover:border-indigo-500/50 transition-colors bg-black/30 mb-8 relative max-w-lg mx-auto">
+          <label for="csvFile" class="cursor-pointer block">
+            <svg class="mx-auto h-12 w-12 text-slate-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span class="text-indigo-400 font-bold font-display text-lg block" id="fileLabel">Upload CSV Dataset</span>
+            <span class="text-xs text-slate-500 block mt-1">Must contain a column named "text"</span>
+            <input id="csvFile" type="file" class="hidden" accept=".csv">
+          </label>
+        </div>
+        
+        <button onclick="analyzeCSV()" id="batchBtn" class="btn-primary w-full max-w-lg mx-auto px-8 py-3.5 text-white font-semibold rounded-xl flex items-center justify-center gap-2">
+          <span>Extract Deep Insights</span>
+          <svg id="loadingBatch" class="animate-spin h-5 w-5 text-white hidden" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 4: Live Internet Scan -->
+    <section id="tab-live" class="tab-view space-y-8 hidden">
+      <div class="glass-card p-8 rounded-3xl max-w-3xl mx-auto my-6">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+          </div>
+          <div>
+            <h2 class="text-2xl font-display font-bold text-white">Live Internet Scan</h2>
+            <p class="text-xs text-slate-400">Mine public streams, news feeds, and live networks for semantic clusters.</p>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <div>
+            <label class="block text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Topic or Keyword to Scan</label>
+            <input type="text" id="liveTopic" placeholder="e.g. Artificial Intelligence, Tesla, Space"
+              class="glass-input w-full px-5 py-3.5 rounded-xl text-sm font-light">
+          </div>
+          
+          <button onclick="scrapeLive()" id="scrapeBtn" class="btn-primary w-full px-8 py-3.5 text-white font-bold rounded-xl flex items-center justify-center gap-2">
+            <span>Scan Network Streams</span>
+            <svg id="loadingLive" class="animate-spin h-5 w-5 text-white hidden" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: History Logs -->
+    <section id="tab-history" class="tab-view space-y-8 hidden">
+      <div class="glass-card p-6 md:p-8 rounded-3xl">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+          <div>
+            <h2 class="text-2xl font-display font-bold text-white">System History Logs</h2>
+            <p class="text-xs text-slate-400 mt-1">Review saved deep learning analysis runs fetched from local database storage.</p>
+          </div>
+          <button onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-300 font-bold transition-all py-2 px-4 border border-red-500/30 rounded-xl bg-red-500/10 hover:bg-red-500/20 shadow-lg">Clear History</button>
+        </div>
+        
+        <div class="overflow-x-auto border border-white/5 rounded-2xl">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-white/10 text-slate-400 text-xs uppercase tracking-widest bg-white/5">
+                <th class="py-4 px-6 font-bold">Timestamp</th>
+                <th class="py-4 px-4 font-bold">Source & Topic</th>
+                <th class="py-4 px-4 font-bold">Dataset Count</th>
+                <th class="py-4 px-4 font-bold">Top Emotion</th>
+                <th class="py-4 pl-4 pr-6 font-bold text-right">Key Entities</th>
+              </tr>
+            </thead>
+            <tbody id="historyTable" class="text-sm divide-y divide-white/5">
+              <!-- Dynamically loaded rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Notification System HTML Components -->
+  <!-- Modals and Toasts dynamically append here -->
 
   <script>
     const API_BASE = '/api';
+    let globalDashboardData = null;
+    let selectedEntityFilter = null;
 
+    // Set badge current date
+    const formatDate = () => {
+      const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+      document.getElementById('currentDateBadge').innerText = new Date().toLocaleDateString('en-US', options);
+    };
+    formatDate();
+
+    // Setup Custom Toast Notification System
+    function showToast(message, type = 'info') {
+      let container = document.getElementById('toastContainer');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'fixed top-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none data-no-print';
+        document.body.appendChild(container);
+      }
+      
+      const toast = document.createElement('div');
+      toast.className = 'pointer-events-auto transform translate-x-12 opacity-0 transition-all duration-300 glass-card p-4 rounded-2xl border flex items-center gap-3 shadow-2xl';
+      
+      const colors = {
+        success: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+        error: 'border-red-500/30 bg-red-500/10 text-red-300',
+        warning: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+        info: 'border-blue-500/30 bg-blue-500/10 text-blue-300'
+      };
+      
+      const icons = {
+        success: '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+        error: '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+        warning: '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>',
+        info: '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+      };
+      
+      toast.classList.add(...colors[type].split(' '));
+      toast.innerHTML = `
+        ${icons[type]}
+        <div class="text-sm font-semibold flex-1 leading-snug">${message}</div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      `;
+      
+      container.appendChild(toast);
+      
+      // Animate slide-in
+      setTimeout(() => {
+        toast.classList.remove('translate-x-12', 'opacity-0');
+      }, 10);
+      
+      // Auto-dismiss after 4 seconds
+      setTimeout(() => {
+        toast.classList.add('translate-x-12', 'opacity-0');
+        setTimeout(() => { toast.remove(); }, 300);
+      }, 4000);
+    }
+
+    // Setup Custom Glassmorphism Confirmation Dialog Modal
+    function showConfirmModal(message, onConfirm) {
+      const modal = document.createElement('div');
+      modal.id = 'customConfirmModal';
+      modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm transition-all duration-300 opacity-0 data-no-print';
+      modal.innerHTML = `
+        <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-white/10 shadow-2xl transform scale-95 transition-all duration-300">
+          <h3 class="text-xl font-display font-extrabold text-white mb-2 flex items-center gap-2">
+            <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            System Confirmation Required
+          </h3>
+          <p class="text-sm text-slate-300 mb-6 leading-relaxed">${message}</p>
+          <div class="flex justify-end gap-3">
+            <button id="confirmCancelBtn" class="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold transition-all">Cancel</button>
+            <button id="confirmApproveBtn" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-lg shadow-red-500/25 transition-all">Yes, Confirm Action</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.querySelector('.glass-card').classList.remove('scale-95');
+      }, 10);
+      
+      const closeModal = () => {
+        modal.classList.add('opacity-0');
+        modal.querySelector('.glass-card').classList.add('scale-95');
+        setTimeout(() => { modal.remove(); }, 300);
+      };
+      
+      modal.querySelector('#confirmCancelBtn').addEventListener('click', closeModal);
+      modal.querySelector('#confirmApproveBtn').addEventListener('click', () => {
+        onConfirm();
+        closeModal();
+      });
+    }
+
+    // Tab Switching Logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-view').forEach(view => {
+        view.classList.add('hidden');
+      });
+      
+      const targetView = document.getElementById(`tab-${tabId}`);
+      if (targetView) {
+        targetView.classList.remove('hidden');
+      }
+      
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active', 'text-indigo-400');
+        btn.classList.add('text-slate-400');
+      });
+      
+      const targetBtn = document.getElementById(`nav-${tabId}`);
+      if (targetBtn) {
+        targetBtn.classList.add('active');
+        targetBtn.classList.remove('text-slate-400');
+      }
+      
+      const textMeta = {
+        dashboard: { title: "Analytics Hub", subtitle: "Real-time aggregate visualization of deep learning predictions and semantics." },
+        single: { title: "Neural Text Processor", subtitle: "Deploy a single sentence to evaluate emotion state in real-time." },
+        batch: { title: "Batch File Processing", subtitle: "Ingest CSV files and compute bulk natural language metrics." },
+        live: { title: "Live Internet Scan", subtitle: "Scrape live topic discussions from public streams for instant sentiment analytics." },
+        history: { title: "Database History Logs", subtitle: "Review and manage previous neural runs saved in local SQLite database storage." }
+      };
+      
+      const info = textMeta[tabId];
+      if (info) {
+        document.getElementById('viewTitle').innerText = info.title;
+        document.getElementById('viewSubtitle').innerText = info.subtitle;
+      }
+      
+      if (tabId === 'history') {
+        loadHistory();
+      }
+
+      // Re-trigger word cloud layout calculation in dashboard view to make it perfectly responsive
+      if (tabId === 'dashboard' && globalDashboardData) {
+        setTimeout(renderWordCloud, 100);
+      }
+    }
+
+    // CSV File Label Binding
     document.getElementById('csvFile').addEventListener('change', function(e) {
       if (e.target.files.length > 0) {
         document.getElementById('fileLabel').innerText = e.target.files[0].name;
+        showToast(`Dataset loaded: ${e.target.files[0].name}`, 'info');
       }
     });
 
+    // Button Spinner helper
     function setBtnLoading(btnId, loaderId, state, originalText) {
       const btn = document.getElementById(btnId);
       const loader = document.getElementById(loaderId);
       if (state) {
         btn.classList.add('opacity-75', 'cursor-not-allowed');
-        btn.querySelector('span').innerText = 'Processing...';
+        btn.querySelector('span').innerText = 'Computing...';
         loader.classList.remove('hidden');
       } else {
         btn.classList.remove('opacity-75', 'cursor-not-allowed');
@@ -303,6 +684,7 @@
       }
     }
 
+    // Theme Color Utilities
     function getColorClass(emotion) {
       const e = (emotion || "").toLowerCase();
       const map = {
@@ -315,29 +697,20 @@
     }
     
     function getEntityColorClass(type) {
-        const types = {
-            'ORG': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-            'PERSON': 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-            'GPE': 'bg-orange-500/20 text-orange-300 border-orange-500/30',
-            'LOC': 'bg-orange-500/20 text-orange-300 border-orange-500/30',
-            'PRODUCT': 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-            'EVENT': 'bg-pink-500/20 text-pink-300 border-pink-500/30',
-            'NORP': 'bg-teal-500/20 text-teal-300 border-teal-500/30',
-            'MISC': 'bg-slate-500/20 text-slate-300 border-slate-500/30'
-        };
-        return types[type] || types['MISC'];
+      const types = {
+        'ORG': 'bg-blue-500/10 text-blue-300 border-blue-500/20 hover:border-blue-500/40',
+        'PERSON': 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20 hover:border-emerald-500/40',
+        'GPE': 'bg-orange-500/10 text-orange-300 border-orange-500/20 hover:border-orange-500/40',
+        'LOC': 'bg-orange-500/10 text-orange-300 border-orange-500/20 hover:border-orange-500/40',
+        'PRODUCT': 'bg-purple-500/10 text-purple-300 border-purple-500/20 hover:border-purple-500/40',
+        'EVENT': 'bg-pink-500/10 text-pink-300 border-pink-500/20 hover:border-pink-500/40',
+        'NORP': 'bg-teal-500/10 text-teal-300 border-teal-500/20 hover:border-teal-500/40',
+        'MISC': 'bg-slate-500/10 text-slate-300 border-slate-500/20 hover:border-slate-500/40'
+      };
+      return types[type] || types['MISC'];
     }
 
-    async function toggleHistory() {
-      const panel = document.getElementById('historyPanel');
-      if (panel.classList.contains('hidden')) {
-        panel.classList.remove('hidden');
-        loadHistory();
-      } else {
-        panel.classList.add('hidden');
-      }
-    }
-
+    // Historical Databases Operations
     async function loadHistory() {
       try {
         const res = await fetch(`${API_BASE}/history`);
@@ -345,45 +718,52 @@
         const tbody = document.getElementById('historyTable');
         tbody.innerHTML = '';
         if(data.length === 0){
-            tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No recent analysis history found.</td></tr>`;
-            return;
+          tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">No previous analysis runs found.</td></tr>`;
+          return;
         }
         data.forEach(item => {
-            const date = new Date(item.timestamp).toLocaleString();
-            let entitiesHtml = (item.entities || []).slice(0,3).map(e => `<span class="bg-white/10 px-2 py-0.5 rounded text-xs">${e.name}</span>`).join(' ');
-            if(!entitiesHtml) entitiesHtml = '<span class="text-slate-600">-</span>';
-            
-            tbody.innerHTML += `
-            <tr class="border-b border-white/5 hover:bg-white/5">
-              <td class="py-3 pr-4 text-slate-500 text-xs">${date}</td>
-              <td class="py-3 px-4">
-                <div class="text-white font-medium">${item.source}</div>
-                <div class="text-slate-400 text-xs truncate max-w-[150px]">${item.topic || '-'}</div>
-              </td>
-              <td class="py-3 px-4 text-slate-300 font-mono text-xs">${item.total_items} items</td>
-              <td class="py-3 px-4 font-bold ${getColorClass(item.top_emotion)}">${item.top_emotion}</td>
-              <td class="py-3 pl-4 text-right flex flex-wrap justify-end gap-1">${entitiesHtml}</td>
-            </tr>`;
+          const date = new Date(item.timestamp).toLocaleString();
+          let entitiesHtml = (item.entities || []).slice(0,3).map(e => `<span class="bg-white/5 border border-white/10 px-2 py-0.5 rounded text-xs text-slate-300">${e.name}</span>`).join(' ');
+          if(!entitiesHtml) entitiesHtml = '<span class="text-slate-650">-</span>';
+          
+          tbody.innerHTML += `
+          <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+            <td class="py-4 px-6 text-slate-500 text-xs font-mono">${date}</td>
+            <td class="py-4 px-4 font-semibold text-white">
+              <div class="text-sm">${item.source}</div>
+              <div class="text-slate-400 text-xs truncate max-w-[200px] mt-0.5 font-light">${item.topic || '-'}</div>
+            </td>
+            <td class="py-4 px-4 text-slate-300 font-mono text-xs">${item.total_items} items</td>
+            <td class="py-4 px-4 font-bold tracking-wide ${getColorClass(item.top_emotion)}">${item.top_emotion}</td>
+            <td class="py-4 pl-4 pr-6 text-right flex flex-wrap justify-end gap-1">${entitiesHtml}</td>
+          </tr>`;
         });
       } catch (e) {
-          console.error("Failed to load history", e);
+        showToast("Failed to fetch SQLite history logs.", "error");
       }
     }
 
     async function clearHistory() {
-        if(!confirm("Are you sure you want to clear your local analysis history?")) return;
+      showConfirmModal("Are you sure you want to permanently clear the local analysis history from the SQLite database?", async () => {
         try {
-            await fetch(`${API_BASE}/history`, { method: 'DELETE' });
+          const res = await fetch(`${API_BASE}/history`, { method: 'DELETE' });
+          if(res.ok) {
+            showToast("Database history successfully cleared.", "success");
             loadHistory();
-        } catch(e) { console.error(e) }
+          } else throw new Error();
+        } catch(e) { 
+          showToast("Failed to execute database delete operation.", "error");
+        }
+      });
     }
 
+    // Text Analyzer Endpoint
     async function analyzeText() {
       const text = document.getElementById("inputText").value;
-      if (!text.trim()) return;
-      setBtnLoading('analyzeBtn', 'loadingSingle', true, 'Analyze');
+      if (!text.trim()) return showToast("Please input a valid phrase.", "warning");
+      setBtnLoading('analyzeBtn', 'loadingSingle', true, 'Analyze Emotion');
       const resEl = document.getElementById("singleResult");
-      resEl.classList.remove('opacity-100');
+      resEl.classList.add('opacity-0');
 
       try {
         const response = await fetch(`${API_BASE}/analyze`, {
@@ -391,114 +771,161 @@
         });
         const data = await response.json();
         if (response.ok) {
-          resEl.innerText = data.sentiment;
-          resEl.className = `text-3xl font-display font-black opacity-100 transition-opacity ${getColorClass(data.sentiment)}`;
-        } else alert('Error: ' + data.error);
-      } catch (err) { alert('Failed to connect to backend.'); } 
-      finally { setBtnLoading('analyzeBtn', 'loadingSingle', false, 'Analyze'); }
+          const confidenceText = data.confidence ? ` <span class="text-sm font-semibold text-slate-400 ml-1">(${Math.round(data.confidence * 100)}%)</span>` : '';
+          resEl.innerHTML = `${data.sentiment}${confidenceText}`;
+          resEl.className = `text-3xl font-display font-black opacity-100 transition-all ${getColorClass(data.sentiment)}`;
+          showToast("Neural sentiment computed successfully.", "success");
+        } else {
+          showToast(data.error || "Analysis failed.", "error");
+        }
+      } catch (err) { 
+        showToast("Could not communicate with the neural backend.", "error");
+      } finally { 
+        setBtnLoading('analyzeBtn', 'loadingSingle', false, 'Analyze Emotion'); 
+      }
     }
 
+    // Batch Processing Endpoint
     async function analyzeCSV() {
       const fileInput = document.getElementById("csvFile");
-      if (!fileInput.files.length) return alert("Select a CSV file.");
-      const formData = new FormData(); formData.append("file", fileInput.files[0]);
+      if (!fileInput.files.length) return showToast("Select a CSV file to process.", "warning");
+      const formData = new FormData(); 
+      formData.append("file", fileInput.files[0]);
       setBtnLoading('batchBtn', 'loadingBatch', true, 'Extract Deep Insights');
 
       try {
         const response = await fetch(`${API_BASE}/analyze-batch`, { method: 'POST', body: formData });
         const data = await response.json();
-        if (response.ok) renderDashboard(data); else alert('Error: ' + data.error);
-      } catch (err) { alert('Backend error.'); } 
-      finally { setBtnLoading('batchBtn', 'loadingBatch', false, 'Extract Deep Insights'); }
+        if (response.ok) {
+          showToast("Batch dataset processed successfully.", "success");
+          selectedEntityFilter = null;
+          globalDashboardData = data;
+          switchTab('dashboard');
+          renderDashboard(data);
+        } else {
+          showToast(data.error || "Batch processing failed.", "error");
+        }
+      } catch (err) { 
+        showToast("Backend pipeline execution failed.", "error");
+      } finally { 
+        setBtnLoading('batchBtn', 'loadingBatch', false, 'Extract Deep Insights'); 
+      }
     }
 
+    // Wikipedia Stream Scraper
     async function scrapeLive() {
       const topic = document.getElementById('liveTopic').value || 'technology';
-      setBtnLoading('scrapeBtn', 'loadingLive', true, 'Scan Network');
+      if(!topic.trim()) return showToast("Input a topic to scrape.", "warning");
+      setBtnLoading('scrapeBtn', 'loadingLive', true, 'Scan Network Streams');
       
       try {
         const response = await fetch(`${API_BASE}/scrape?topic=${encodeURIComponent(topic)}`);
         if(!response.ok) throw new Error(await response.text());
         const data = await response.json();
+        showToast(`Topic '${topic}' scanned successfully.`, "success");
+        selectedEntityFilter = null;
+        globalDashboardData = data;
+        switchTab('dashboard');
         renderDashboard(data); 
-      } catch (err) { alert('API Error or Failed to reach internet feeds.'); console.error(err); } 
-      finally { setBtnLoading('scrapeBtn', 'loadingLive', false, 'Scan Network'); }
+      } catch (err) { 
+        showToast("Live scanning failed. Target endpoint returned error.", "error");
+        console.error(err); 
+      } finally { 
+        setBtnLoading('scrapeBtn', 'loadingLive', false, 'Scan Network Streams'); 
+      }
     }
 
+    // Drilldown Entity Filter Logic
+    function filterByEntity(entityName) {
+      selectedEntityFilter = entityName;
+      document.getElementById('clearFilterBtn').classList.remove('hidden');
+      document.getElementById('filterStatusText').innerHTML = `Showing sentences containing entity: <strong class="text-emerald-400">${entityName}</strong>`;
+      showToast(`Filter applied: ${entityName}`, 'info');
+      renderTable(globalDashboardData.results);
+      
+      // Smoothly scroll down to the table
+      document.getElementById('resultsTable').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function clearEntityFilter() {
+      selectedEntityFilter = null;
+      document.getElementById('clearFilterBtn').classList.add('hidden');
+      document.getElementById('filterStatusText').innerText = "Showing all data points sorted sequentially.";
+      showToast("Drilldown filter cleared.", "info");
+      renderTable(globalDashboardData.results);
+    }
+
+    // Dashboard Rendering Pipeline
     function renderDashboard(data) {
-      const section = document.getElementById('analyticsSection');
-      section.classList.remove('hidden'); void section.offsetWidth; section.classList.add('opacity-100');
+      // Toggle views
+      document.getElementById('dashboardEmptyState').classList.add('hidden');
+      document.getElementById('analyticsDashboard').classList.remove('hidden');
 
-      // 1. Render Table
-      const tb = document.getElementById("resultsTable"); tb.innerHTML = "";
-      data.results.forEach(row => {
-        tb.innerHTML += `<tr class="border-b border-white/5 hover:bg-white/5">
-          <td class="py-3 pr-4 text-slate-500 font-mono text-xs">${row.id}</td>
-          <td class="py-3 px-4 text-slate-300 font-light text-[13px] leading-relaxed">${row.text}</td>
-          <td class="py-3 pl-4 text-right font-bold tracking-wide ${getColorClass(row.sentiment)}">${row.sentiment}</td>
-        </tr>`;
-      });
+      // 1. Populate Metrics Stats KPIs
+      const totalCount = data.results.length;
+      document.getElementById('kpiTotalItems').innerText = totalCount;
+      
+      const dominantEmotion = Object.keys(data.counts).reduce((a, b) => data.counts[a] > data.counts[b] ? a : b, 'N/A');
+      const dominantEl = document.getElementById('kpiDominantSentiment');
+      dominantEl.innerText = dominantEmotion;
+      dominantEl.className = `text-3xl font-display font-black mt-2 ${getColorClass(dominantEmotion)}`;
 
-      // 2. Render Apriori Rules
-      const grid = document.getElementById("aprioriGrid"); grid.innerHTML = "";
-      if (data.apriori_rules && data.apriori_rules.length > 0) {
-        data.apriori_rules.forEach(rule => {
-          grid.innerHTML += `
-            <div class="rule-card rounded-2xl p-5 border border-white/10 shadow-lg">
-              <div class="text-xs text-slate-500 font-mono mb-2 uppercase tracking-widest">Rule Connection</div>
-              <div class="font-bold text-white mb-1"><span class="text-orange-400">${rule.antecedents.join(', ')}</span> ➔</div>
-              <div class="font-bold text-white mb-3 pl-4">➔ <span class="text-yellow-400">${rule.consequents.join(', ')}</span></div>
-              <div class="flex justify-between text-xs text-slate-400 bg-black/30 p-2 rounded-lg">
-                <span>Conf: <strong class="text-white">${rule.confidence}</strong></span>
-                <span>Lift: <strong class="text-white">${rule.lift}</strong></span>
-              </div>
-            </div>`;
+      // Calculate Average ML Confidence
+      const avgConfidenceVal = data.avg_confidence || (data.results.reduce((acc, r) => acc + (r.confidence || 0.0), 0.0) / totalCount) || 0.85;
+      document.getElementById('kpiAvgConfidence').innerText = `${Math.round(avgConfidenceVal * 100)}%`;
+
+      document.getElementById('kpiRulesCount').innerText = data.apriori_rules ? data.apriori_rules.length : 0;
+      document.getElementById('kpiTopEntity').innerText = data.entities && data.entities.length > 0 ? data.entities[0].name : 'N/A';
+
+      // 1b. Source count pills (only for live scan data)
+      const pillsContainer = document.getElementById('sourceCountPills');
+      const sourceContainer = document.getElementById('sourceCountContainer');
+      if (data.source_counts && Object.keys(data.source_counts).length > 0) {
+        pillsContainer.classList.remove('hidden');
+        sourceContainer.innerHTML = '';
+        const sourceColors = {
+          'Wikipedia': 'bg-blue-500/15 text-blue-300 border-blue-500/25',
+          'Reddit': 'bg-orange-500/15 text-orange-300 border-orange-500/25',
+          'HackerNews': 'bg-amber-500/15 text-amber-300 border-amber-500/25'
+        };
+        Object.entries(data.source_counts).forEach(([src, count]) => {
+          const cls = sourceColors[src] || 'bg-slate-500/15 text-slate-300 border-slate-500/25';
+          sourceContainer.innerHTML += `<span class="border rounded-full px-3 py-1 text-xs font-semibold ${cls}">${src}: ${count}</span>`;
         });
       } else {
-        grid.innerHTML = `<div class="col-span-full text-slate-500 text-sm italic">Not enough volume to generate strong association rules.</div>`;
+        pillsContainer.classList.add('hidden');
       }
 
-      // 3. Render NER Entities
-      const entList = document.getElementById('entitiesList'); entList.innerHTML = '';
+      // 2. Render Table
+      renderTable(data.results);
+
+      // 3. Render Apriori Rules list and custom SVG Graph
+      renderAprioriGraphAndList(data.apriori_rules);
+
+      // 4. Render NER Entity Badges
+      const entList = document.getElementById('entitiesList'); 
+      entList.innerHTML = '';
       if(data.entities && data.entities.length > 0) {
-          data.entities.forEach(ent => {
-             const styleStr = getEntityColorClass(ent.type);
-             entList.innerHTML += `
-             <div class="flex items-center gap-2 border rounded-full px-3 py-1 ${styleStr}">
-                <span class="font-semibold text-sm">${ent.name}</span>
-                <span class="text-[10px] opacity-70 uppercase tracking-wider hidden sm:inline">[${ent.type}]</span>
-                <span class="bg-black/20 text-white text-xs px-1.5 py-0.5 rounded-full ml-1">${ent.count}</span>
-             </div>
-             `;
-          });
+        data.entities.forEach(ent => {
+          const styleStr = getEntityColorClass(ent.type);
+          entList.innerHTML += `
+          <button onclick="filterByEntity('${ent.name.replace(/'/g, "\\'")}')" class="flex items-center gap-2 border rounded-full px-3.5 py-1.5 transition-all text-xs font-semibold cursor-pointer ${styleStr}">
+            <span>${ent.name}</span>
+            <span class="text-[9px] opacity-70 uppercase tracking-wider font-mono">[${ent.type}]</span>
+            <span class="bg-black/35 text-white text-[10px] px-1.5 py-0.5 rounded-full ml-0.5 font-mono">${ent.count}</span>
+          </button>`;
+        });
       } else {
-          entList.innerHTML = `<span class="text-slate-500 italic text-sm">No significant entities found.</span>`;
+        entList.innerHTML = `<span class="text-slate-500 italic text-xs">No significant named entities discovered.</span>`;
       }
 
-      // 4. Render Word Cloud
-      if(data.keywords && data.keywords.length > 0) {
-          const list = data.keywords.map(kw => [kw.word, kw.count * 10]); // Scale up for visual
-          WordCloud(document.getElementById('wordCloudCanvas'), { 
-              list: list, 
-              fontFamily: 'Inter, sans-serif',
-              fontWeight: 'bold',
-              color: function() {
-                // Return random nice pastel colors
-                const colors = ['#60a5fa', '#a78bfa', '#f472b6', '#34d399', '#facc15', '#e2e8f0'];
-                return colors[Math.floor(Math.random() * colors.length)];
-              },
-              backgroundColor: 'transparent',
-              gridSize: 8,
-              weightFactor: 2,
-              shrinkToFit: true,
-              drawOutOfBound: false
-          });
-      }
+      // 5. Render Word Cloud Canvas
+      renderWordCloud();
 
-      // 5. Render Chart
+      // 6. Render Distribution Chart
       const colors = {
-        'Joy': '#facc15', 'Positive': '#4ade80', 'Anger': '#ef4444', 'Negative': '#f87171',
-        'Sadness': '#60a5fa', 'Fear': '#a78bfa', 'Surprise': '#fb923c', 'Love': '#f472b6', 'Neutral': '#94a3b8'
+        'Joy': '#fbbf24', 'Positive': '#34d399', 'Anger': '#f87171', 'Negative': '#f87171',
+        'Sadness': '#60a5fa', 'Fear': '#c084fc', 'Surprise': '#fb923c', 'Love': '#f472b6', 'Neutral': '#94a3b8'
       };
       
       const labels = Object.keys(data.counts);
@@ -513,30 +940,578 @@
         type: 'polarArea',
         data: {
           labels: labels,
-          datasets: [{ data: values, backgroundColor: bgColors.map(c => c + '80'), borderColor: bgColors, borderWidth: 1 }]
+          datasets: [{ data: values, backgroundColor: bgColors.map(c => c + '75'), borderColor: bgColors, borderWidth: 1 }]
         },
         options: {
-          responsive: true, scales: { r: { ticks: { backdropColor: 'transparent', color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.05)' } } },
-          plugins: { legend: { position: 'bottom' } }
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { r: { ticks: { backdropColor: 'transparent', color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.05)' } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // 7. Render Emotional Polarity Flow timeline
+      renderValenceTimeline(data.results);
+
+      // 8. Render Aspect-Based Sentiment Heatmap
+      renderAspectHeatmap(data.aspects);
+    }
+
+    // Detailed Table Population (with optional filtering)
+    function renderTable(results) {
+      const tb = document.getElementById("resultsTable"); 
+      tb.innerHTML = "";
+      
+      let filtered = results;
+      if (selectedEntityFilter) {
+        const filterLower = selectedEntityFilter.toLowerCase();
+        filtered = results.filter(row => (row.text || "").toLowerCase().includes(filterLower));
+      }
+
+      if (filtered.length === 0) {
+        tb.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-500 italic">No matching sentences found.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(row => {
+        const confBadge = row.confidence ? `<div class="text-[10px] text-slate-500 font-mono mt-0.5 font-normal">${Math.round(row.confidence * 100)}% conf</div>` : '';
+        
+        // Source badge for live scan data
+        let sourceBadge = '';
+        if (row.source) {
+          const srcColors = { 'Wikipedia': 'text-blue-400 bg-blue-500/10', 'Reddit': 'text-orange-400 bg-orange-500/10', 'HackerNews': 'text-amber-400 bg-amber-500/10' };
+          const srcCls = srcColors[row.source] || 'text-slate-400 bg-slate-500/10';
+          sourceBadge = `<span class="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded ${srcCls} ml-1">${row.source}</span>`;
+        }
+
+        tb.innerHTML += `
+        <tr class="hover:bg-white/5 transition-colors">
+          <td class="py-4 pr-4 pl-6 text-slate-500 font-mono text-xs">${row.id}${sourceBadge}</td>
+          <td class="py-4 px-4 text-slate-300 font-light text-sm leading-relaxed">${highlightEntity(row.text)}</td>
+          <td class="py-4 pl-4 pr-6 text-right">
+            <div class="font-bold tracking-wide text-xs ${getColorClass(row.sentiment)}">${row.sentiment}</div>
+            ${confBadge}
+          </td>
+        </tr>`;
+      });
+    }
+
+    // Aspect-Based Sentiment Heatmap Renderer
+    function renderAspectHeatmap(aspects) {
+      const section = document.getElementById('aspectHeatmapSection');
+      const table = document.getElementById('aspectHeatmapTable');
+      
+      if (!aspects || aspects.length === 0) {
+        section.classList.add('hidden');
+        return;
+      }
+      section.classList.remove('hidden');
+
+      const emotions = ['Joy', 'Anger', 'Sadness', 'Fear', 'Surprise', 'Love'];
+      const emotionColors = {
+        'Joy': [251, 191, 36],      // amber
+        'Anger': [248, 113, 113],    // red
+        'Sadness': [96, 165, 250],   // blue
+        'Fear': [192, 132, 252],     // purple
+        'Surprise': [251, 146, 60],  // orange
+        'Love': [244, 114, 182]      // pink
+      };
+
+      // Find max count for intensity scaling
+      let maxCount = 1;
+      aspects.forEach(a => {
+        Object.values(a.sentiments).forEach(v => { if (v > maxCount) maxCount = v; });
+      });
+
+      let html = '<thead><tr>';
+      html += '<th class="py-3 px-4 text-left text-[10px] text-slate-400 uppercase tracking-widest font-extrabold sticky left-0 bg-black/30 backdrop-blur-sm z-10">Aspect</th>';
+      emotions.forEach(e => {
+        html += `<th class="py-3 px-3 text-center text-[10px] text-slate-400 uppercase tracking-widest font-extrabold">${e}</th>`;
+      });
+      html += '<th class="py-3 px-4 text-center text-[10px] text-slate-400 uppercase tracking-widest font-extrabold">Dominant</th>';
+      html += '</tr></thead><tbody>';
+
+      aspects.forEach((a, idx) => {
+        const bgRow = idx % 2 === 0 ? 'bg-white/[0.01]' : '';
+        html += `<tr class="${bgRow} hover:bg-white/[0.04] transition-colors">`;
+        html += `<td class="py-3 px-4 text-sm text-white font-semibold capitalize sticky left-0 bg-[#050b14]/80 backdrop-blur-sm z-10 border-r border-white/5">
+          <div class="flex items-center gap-2">
+            <span>${a.aspect}</span>
+            <span class="text-[9px] text-slate-500 font-mono">×${a.count}</span>
+          </div>
+        </td>`;
+
+        emotions.forEach(e => {
+          const val = a.sentiments[e] || 0;
+          const intensity = val / maxCount;
+          const [r, g, b] = emotionColors[e];
+          const bgColor = val > 0 ? `rgba(${r},${g},${b},${(0.1 + intensity * 0.6).toFixed(2)})` : 'transparent';
+          const borderColor = val > 0 ? `rgba(${r},${g},${b},0.2)` : 'transparent';
+          html += `<td class="py-3 px-3 text-center">
+            <div style="background:${bgColor}; border: 1px solid ${borderColor};" 
+                 class="rounded-lg py-1.5 px-2 text-xs font-mono font-bold transition-all ${val > 0 ? 'text-white/90 hover:scale-110' : 'text-slate-600'}">
+              ${val > 0 ? val : '·'}
+            </div>
+          </td>`;
+        });
+
+        // Dominant emotion badge
+        const domColor = getColorClass(a.dominant);
+        html += `<td class="py-3 px-4 text-center">
+          <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${domColor}" 
+                style="background: rgba(255,255,255,0.05);">${a.dominant}</span>
+        </td>`;
+        html += '</tr>';
+      });
+
+      html += '</tbody>';
+      table.innerHTML = html;
+    }
+
+    function highlightEntity(text) {
+      if (!selectedEntityFilter) return text;
+      const regex = new RegExp(`(${selectedEntityFilter})`, 'gi');
+      return text.replace(regex, `<span class="bg-emerald-500/25 text-emerald-300 px-1 py-0.5 rounded font-medium">$1</span>`);
+    }
+
+    // Chronological Emotional Valence Chart
+    function renderValenceTimeline(results) {
+      const valenceMap = {
+        'joy': 1.0, 'happiness': 1.0, 'positive': 1.0, 'love': 1.0,
+        'surprise': 0.5, 'neutral': 0.0,
+        'sadness': -0.5, 'fear': -0.7, 'anger': -1.0, 'negative': -1.0
+      };
+
+      const valences = results.map(row => valenceMap[(row.sentiment || "").toLowerCase()] || 0.0);
+
+      function calculateRollingAverage(arr, size = 5) {
+        let rolling = [];
+        for (let i = 0; i < arr.length; i++) {
+          const start = Math.max(0, i - size + 1);
+          const subset = arr.slice(start, i + 1);
+          const avg = subset.reduce((a, b) => a + b, 0) / subset.length;
+          rolling.push(avg);
+        }
+        return rolling;
+      }
+
+      const windowSize = Math.max(2, Math.min(5, Math.ceil(valences.length / 8)));
+      const rollingValence = calculateRollingAverage(valences, windowSize);
+      const timelineLabels = results.map((_, idx) => `${idx + 1}`);
+
+      const valenceCtx = document.getElementById("valenceChart").getContext("2d");
+      if (window.valChart) window.valChart.destroy();
+
+      const gradient = valenceCtx.createLinearGradient(0, 0, 0, 220);
+      gradient.addColorStop(0, 'rgba(129, 140, 248, 0.35)');
+      gradient.addColorStop(1, 'rgba(129, 140, 248, 0.0)');
+
+      window.valChart = new Chart(valenceCtx, {
+        type: 'line',
+        data: {
+          labels: timelineLabels,
+          datasets: [{
+            label: 'Emotional Valence Flow',
+            data: rollingValence,
+            borderColor: '#818cf8',
+            borderWidth: 3,
+            fill: true,
+            backgroundColor: gradient,
+            tension: 0.4,
+            pointRadius: valences.length > 50 ? 0 : 3,
+            pointBackgroundColor: '#818cf8',
+            pointBorderColor: '#050b14',
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              min: -1.2,
+              max: 1.2,
+              ticks: {
+                stepSize: 0.5,
+                color: '#64748b',
+                font: { size: 10, weight: 'bold' },
+                callback: function(value) {
+                  if (value === 1.0) return 'Positive';
+                  if (value === 0.0) return 'Neutral';
+                  if (value === -1.0) return 'Negative';
+                  return '';
+                }
+              },
+              grid: { color: 'rgba(255,255,255,0.04)' }
+            },
+            x: {
+              ticks: {
+                color: '#64748b',
+                font: { size: 9 },
+                maxRotation: 0,
+                autoSkip: true,
+                maxTicksLimit: 12
+              },
+              grid: { display: false }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              titleColor: '#fff',
+              bodyColor: '#cbd5e1',
+              borderColor: 'rgba(255,255,255,0.08)',
+              borderWidth: 1,
+              titleFont: { family: 'Outfit', weight: 'bold' },
+              bodyFont: { family: 'Inter' }
+            }
+          }
         }
       });
     }
 
+    // Word Cloud Loader
+    function renderWordCloud() {
+      const data = globalDashboardData;
+      if (!data || !data.keywords || data.keywords.length === 0) return;
+      
+      const canvas = document.getElementById('wordCloudCanvas');
+      
+      // Perfect responsive resolution setup
+      const parent = canvas.parentElement;
+      canvas.width = parent.clientWidth;
+      canvas.height = parent.clientHeight;
+
+      const list = data.keywords.map(kw => [kw.word, kw.count * 8]); // Scale for visual impact
+      
+      WordCloud(canvas, { 
+        list: list, 
+        fontFamily: 'Outfit, Inter, sans-serif',
+        fontWeight: 'bold',
+        color: function() {
+          const colors = ['#60a5fa', '#a78bfa', '#f472b6', '#34d399', '#fbbf24', '#e2e8f0'];
+          return colors[Math.floor(Math.random() * colors.length)];
+        },
+        backgroundColor: 'transparent',
+        gridSize: 10,
+        weightFactor: 2.2,
+        shrinkToFit: true,
+        drawOutOfBound: false
+      });
+    }
+
+    // Auto recalculate word cloud on resize to keep it perfectly responsive
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (globalDashboardData && !document.getElementById('tab-dashboard').classList.contains('hidden')) {
+          renderWordCloud();
+        }
+      }, 250);
+    });
+
+    // Executive PDF Reports Generation
     function exportPDF() {
-      // Hide buttons temporarily to keep report clean
+      if(!globalDashboardData) {
+        return showToast("No active data loaded. Build a dashboard report first.", "warning");
+      }
+      
+      showToast("Generating print-optimized executive summary...", "info");
+      
+      // Slide active elements to print view
       const elementsToHide = document.querySelectorAll('.data-no-print');
       elementsToHide.forEach(el => el.style.display = 'none');
       
       const element = document.getElementById('reportArea');
+      
       html2pdf().from(element).set({
         margin: 0.5,
-        filename: 'Tweetverse_AI_Report_2.pdf',
+        filename: `Tweetverse_Executive_AI_Report_${new Date().toISOString().slice(0,10)}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
       }).save().then(() => {
         elementsToHide.forEach(el => el.style.display = '');
+        showToast("PDF report successfully downloaded.", "success");
+      }).catch(err => {
+        elementsToHide.forEach(el => el.style.display = '');
+        showToast("Export process encountered an error.", "error");
+        console.error(err);
       });
+    }
+
+    // Dynamic SVG Apriori Semantic Graph & Rules List
+    function renderAprioriGraphAndList(rules) {
+      const listContainer = document.getElementById("aprioriList");
+      const svg = document.getElementById("aprioriSvg");
+      
+      listContainer.innerHTML = "";
+      svg.innerHTML = "";
+
+      if (!rules || rules.length === 0) {
+        document.getElementById("aprioriContentContainer").classList.add("hidden");
+        // Check if empty state already exists
+        let emptyState = document.getElementById("aprioriEmptyState");
+        if (!emptyState) {
+          emptyState = document.createElement("div");
+          emptyState.id = "aprioriEmptyState";
+          emptyState.className = "text-slate-500 text-xs italic p-6 text-center border border-white/5 bg-black/10 rounded-2xl";
+          emptyState.innerText = "Not enough transactional pattern weight to construct rules or semantic graphs.";
+          document.getElementById("dataMiningSection").appendChild(emptyState);
+        }
+        return;
+      }
+
+      // If empty state exists, clear it
+      const emptyState = document.getElementById("aprioriEmptyState");
+      if (emptyState) emptyState.remove();
+      document.getElementById("aprioriContentContainer").classList.remove("hidden");
+
+      // 1. Populate the list of rules on the right
+      rules.forEach((rule, idx) => {
+        listContainer.innerHTML += `
+          <div id="rule-card-${idx}" onmouseenter="highlightRulePathway(${idx})" onmouseleave="resetAprioriHighlight()" class="rule-card rounded-xl p-4 shadow-md bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10 transition-all">
+            <div class="text-[8px] text-slate-500 font-mono mb-1.5 uppercase tracking-widest">Rule #${idx + 1}</div>
+            <div class="font-bold text-white text-xs leading-normal"><span class="text-indigo-400">${rule.antecedents.join(', ')}</span> ➔ <span class="text-amber-400">${rule.consequents.join(', ')}</span></div>
+            <div class="flex gap-3 text-[9px] text-slate-400 mt-2 bg-black/20 px-2.5 py-1.5 rounded-lg font-mono">
+              <span>Conf: <strong class="text-slate-200">${Math.round(rule.confidence * 100)}%</strong></span>
+              <span>Lift: <strong class="text-slate-200">${rule.lift}</strong></span>
+            </div>
+          </div>`;
+      });
+
+      // 2. Build the SVG Graph
+      const rect = svg.getBoundingClientRect();
+      const width = rect.width || 500;
+      const height = rect.height || 330;
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      // Extract unique words
+      const uniqueWords = new Set();
+      rules.forEach(r => {
+        r.antecedents.forEach(w => uniqueWords.add(w));
+        r.consequents.forEach(w => uniqueWords.add(w));
+      });
+      const nodesList = Array.from(uniqueWords);
+
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radius = Math.min(width, height) * 0.33;
+
+      // Arrange nodes in a circular layout
+      const nodes = nodesList.map((word, idx) => {
+        const angle = (idx * 2 * Math.PI) / nodesList.length - Math.PI / 2;
+        return {
+          id: word,
+          name: word,
+          x: centerX + radius * Math.cos(angle),
+          y: centerY + radius * Math.sin(angle)
+        };
+      });
+
+      const nodeMap = {};
+      nodes.forEach(n => nodeMap[n.id] = n);
+
+      // Create arrow marker definition in SVG
+      svg.innerHTML = `
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#818cf8" />
+          </marker>
+          <marker id="arrow-highlight" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#fb923c" />
+          </marker>
+        </defs>
+      `;
+
+      // Map rules to link elements
+      const links = [];
+      rules.forEach((rule, ruleIdx) => {
+        rule.antecedents.forEach(ant => {
+          rule.consequents.forEach(cons => {
+            if (nodeMap[ant] && nodeMap[cons]) {
+              links.push({
+                source: nodeMap[ant],
+                target: nodeMap[cons],
+                confidence: rule.confidence,
+                ruleIndex: ruleIdx
+              });
+            }
+          });
+        });
+      });
+
+      // Draw links
+      links.forEach((link, idx) => {
+        const pathId = `link-${idx}`;
+        const source = link.source;
+        const target = link.target;
+        
+        // Calculate curved path Q coordinate to make lines curves gracefully
+        const midX = (source.x + target.x) / 2;
+        const midY = (source.y + target.y) / 2;
+        const dx = target.x - source.x;
+        const dy = target.y - source.y;
+        const len = Math.sqrt(dx*dx + dy*dy);
+        const offset = 22; 
+        const nx = -dy / len;
+        const ny = dx / len;
+        const ctrlX = midX + nx * offset;
+        const ctrlY = midY + ny * offset;
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("id", pathId);
+        path.setAttribute("class", "graph-link transition-all duration-300");
+        path.setAttribute("d", `M ${source.x} ${source.y} Q ${ctrlX} ${ctrlY} ${target.x} ${target.y}`);
+        path.setAttribute("stroke", "rgba(129, 140, 248, 0.25)");
+        path.setAttribute("stroke-width", "2");
+        path.setAttribute("fill", "none");
+        path.setAttribute("marker-end", "url(#arrow)");
+        path.dataset.ruleIndex = link.ruleIndex;
+        path.dataset.source = source.id;
+        path.dataset.target = target.id;
+
+        svg.appendChild(path);
+      });
+
+      // Draw node elements
+      nodes.forEach(node => {
+        const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        group.setAttribute("id", `node-${node.id}`);
+        group.setAttribute("class", "graph-node cursor-pointer group");
+        group.dataset.id = node.id;
+        
+        group.addEventListener("mouseenter", () => highlightNodePathway(node.id));
+        group.addEventListener("mouseleave", resetAprioriHighlight);
+
+        // Core dot circle
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", node.x);
+        circle.setAttribute("cy", node.y);
+        circle.setAttribute("r", "7");
+        circle.setAttribute("fill", "#6366f1");
+        circle.setAttribute("stroke", "#ffffff");
+        circle.setAttribute("stroke-width", "1.5");
+        circle.setAttribute("class", "transition-all duration-300 group-hover:scale-125");
+
+        // Glowing backdrop ring
+        const ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        ring.setAttribute("cx", node.x);
+        ring.setAttribute("cy", node.y);
+        ring.setAttribute("r", "13");
+        ring.setAttribute("fill", "rgba(99, 102, 241, 0.15)");
+        ring.setAttribute("class", "opacity-0 group-hover:opacity-100 transition-all duration-300");
+
+        // Text label
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", node.x);
+        text.setAttribute("y", node.y - 13);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("fill", "#cbd5e1");
+        text.setAttribute("class", "text-[10px] font-bold font-display pointer-events-none select-none transition-colors group-hover:fill-indigo-300");
+        text.textContent = node.name;
+
+        group.appendChild(ring);
+        group.appendChild(circle);
+        group.appendChild(text);
+        svg.appendChild(group);
+      });
+      
+      // Global highlights handlers
+      window.highlightRulePathway = function(ruleIdx) {
+        document.querySelectorAll(".rule-card").forEach(c => c.classList.add("opacity-45"));
+        const activeCard = document.getElementById(`rule-card-${ruleIdx}`);
+        if(activeCard) {
+          activeCard.classList.remove("opacity-45");
+          activeCard.classList.add("border-orange-500/50", "bg-white/10");
+        }
+
+        document.querySelectorAll(".graph-link").forEach(l => {
+          if (parseInt(l.dataset.ruleIndex) === ruleIdx) {
+            l.setAttribute("stroke", "rgba(251, 146, 60, 0.95)");
+            l.setAttribute("stroke-width", "3.5");
+            l.setAttribute("marker-end", "url(#arrow-highlight)");
+          } else {
+            l.setAttribute("stroke", "rgba(255,255,255,0.03)");
+          }
+        });
+
+        const rule = rules[ruleIdx];
+        const connectedNodes = new Set([...rule.antecedents, ...rule.consequents]);
+        document.querySelectorAll(".graph-node").forEach(n => {
+          if (connectedNodes.has(n.dataset.id)) {
+            n.querySelector("circle").setAttribute("fill", "#fb923c");
+            n.querySelector("circle").setAttribute("r", "8.5");
+            n.querySelector("text").setAttribute("fill", "#fbd38d");
+          } else {
+            n.setAttribute("opacity", "0.2");
+          }
+        });
+      };
+
+      window.highlightNodePathway = function(nodeId) {
+        const activeRules = [];
+        rules.forEach((rule, idx) => {
+          if (rule.antecedents.includes(nodeId) || rule.consequents.includes(nodeId)) {
+            activeRules.push(idx);
+          }
+        });
+
+        document.querySelectorAll(".rule-card").forEach(c => c.classList.add("opacity-45"));
+        activeRules.forEach(ruleIdx => {
+          const card = document.getElementById(`rule-card-${ruleIdx}`);
+          if (card) card.classList.remove("opacity-45");
+        });
+
+        document.querySelectorAll(".graph-node").forEach(n => {
+          if (n.dataset.id === nodeId) {
+            n.querySelector("circle").setAttribute("fill", "#a855f7");
+            n.querySelector("circle").setAttribute("r", "9");
+            n.querySelector("text").setAttribute("fill", "#c084fc");
+          } else {
+            n.setAttribute("opacity", "0.25");
+          }
+        });
+
+        document.querySelectorAll(".graph-link").forEach(l => {
+          if (l.dataset.source === nodeId || l.dataset.target === nodeId) {
+            l.setAttribute("stroke", "rgba(168, 85, 247, 0.95)");
+            l.setAttribute("stroke-width", "3");
+            
+            const peerNodeId = l.dataset.source === nodeId ? l.dataset.target : l.dataset.source;
+            const peerNode = document.getElementById(`node-${peerNodeId}`);
+            if(peerNode) {
+              peerNode.setAttribute("opacity", "1.0");
+              peerNode.querySelector("circle").setAttribute("fill", "#fb7185");
+            }
+          } else {
+            l.setAttribute("stroke", "rgba(255,255,255,0.02)");
+          }
+        });
+      };
+
+      window.resetAprioriHighlight = function() {
+        document.querySelectorAll(".rule-card").forEach(c => {
+          c.classList.remove("opacity-45", "border-orange-500/50", "bg-white/10");
+        });
+
+        document.querySelectorAll(".graph-link").forEach(l => {
+          l.setAttribute("stroke", "rgba(129, 140, 248, 0.25)");
+          l.setAttribute("stroke-width", "2");
+          l.setAttribute("marker-end", "url(#arrow)");
+        });
+
+        document.querySelectorAll(".graph-node").forEach(n => {
+          n.removeAttribute("opacity");
+          n.querySelector("circle").setAttribute("fill", "#6366f1");
+          n.querySelector("circle").setAttribute("r", "7");
+          n.querySelector("text").setAttribute("fill", "#cbd5e1");
+        });
+      };
     }
   </script>
 </body>

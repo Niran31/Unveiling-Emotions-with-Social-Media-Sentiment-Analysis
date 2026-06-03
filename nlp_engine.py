@@ -26,34 +26,41 @@ print("--------------------------------------------------")
 
 def get_sentiment(text):
     if not isinstance(text, str) or not text.strip():
-        return "Neutral"
+        return {"label": "Neutral", "confidence": 1.0}
     
     try:
         # Transformers have token limits. Truncate text.
         results = emotion_classifier(text[:512]) 
         pred = results[0][0]
         label = pred['label'].capitalize()
-        return label
+        return {"label": label, "confidence": float(pred['score'])}
     except Exception as e:
         print(f"DL Error: {e}")
-        return "Neutral"
+        return {"label": "Neutral", "confidence": 1.0}
 
 def analyze_batch(texts):
     results = []
     counts = {}
+    confidences = []
+    
     for text in texts:
-        sentiment = get_sentiment(text)
-        if sentiment not in counts:
-            counts[sentiment] = 0
-        counts[sentiment] += 1
-        results.append({"text": text, "sentiment": sentiment})
+        res = get_sentiment(text)
+        label = res['label']
+        conf = res['confidence']
+        
+        if label not in counts:
+            counts[label] = 0
+        counts[label] += 1
+        results.append({"text": text, "sentiment": label, "confidence": conf})
+        confidences.append(conf)
     
     # Ensure some standard colors exist even if 0
     for basic in ['Joy', 'Anger', 'Sadness', 'Fear', 'Surprise', 'Love', 'Neutral']:
         if basic not in counts and len(counts) < 3: # Keep clean if none found
              pass
              
-    return {"results": results, "counts": counts}
+    avg_conf = sum(confidences) / len(confidences) if confidences else 0.0
+    return {"results": results, "counts": counts, "avg_confidence": avg_conf}
 
 def mine_frequent_patterns(texts):
     """ Executes the Apriori algorithm on texts """
@@ -174,3 +181,69 @@ def extract_keywords(texts, top_n=60):
     for word, count in word_counter.most_common(top_n):
         results.append({"word": word, "count": count})
     return results
+
+
+# =============================================
+# NEW: Aspect-Based Sentiment Analysis (ABSA)
+# =============================================
+def extract_aspects(texts, top_n=12):
+    """
+    Extracts noun-phrase aspects from texts using SpaCy chunking,
+    then classifies the sentiment of each aspect's surrounding sentence.
+    Returns a list of top aspects with per-emotion breakdowns.
+    """
+    aspect_counter = Counter()
+    aspect_sentiments = {}  # aspect_key -> Counter of emotions
+
+    stop_aspects = {
+        'it', 'i', 'we', 'they', 'you', 'he', 'she', 'this', 'that',
+        'which', 'what', 'who', 'there', 'here', 'these', 'those',
+        'me', 'us', 'them', 'my', 'our', 'your', 'its', 'the',
+        'a', 'an', 'some', 'any', 'all', 'no', 'every', 'each'
+    }
+
+    for text in texts:
+        if not isinstance(text, str) or not text.strip():
+            continue
+
+        doc = nlp_spacy(text[:1000])
+
+        # Extract noun chunks as aspects
+        seen_in_text = set()
+        for chunk in doc.noun_chunks:
+            # Clean and normalize
+            aspect = chunk.text.strip().lower()
+            # Remove leading determiners/articles
+            aspect = re.sub(r'^(the|a|an|this|that|my|our|your|his|her|its|their)\s+', '', aspect)
+            aspect = aspect.strip()
+
+            if len(aspect) < 2 or aspect in stop_aspects or aspect.isdigit():
+                continue
+            if aspect in seen_in_text:
+                continue
+            seen_in_text.add(aspect)
+
+            aspect_counter[aspect] += 1
+
+            # Get the sentiment of the sentence containing this chunk
+            sent_text = chunk.sent.text if chunk.sent else text
+            result = get_sentiment(sent_text[:512])
+            label = result['label']
+
+            if aspect not in aspect_sentiments:
+                aspect_sentiments[aspect] = Counter()
+            aspect_sentiments[aspect][label] += 1
+
+    # Build output for the top N most-mentioned aspects
+    output = []
+    for aspect, count in aspect_counter.most_common(top_n):
+        sentiments = dict(aspect_sentiments.get(aspect, {}))
+        dominant = max(sentiments, key=sentiments.get) if sentiments else 'Neutral'
+        output.append({
+            "aspect": aspect,
+            "count": count,
+            "sentiments": sentiments,
+            "dominant": dominant
+        })
+
+    return output
